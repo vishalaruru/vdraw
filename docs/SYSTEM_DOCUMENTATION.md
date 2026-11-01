@@ -247,3 +247,4 @@ sequenceDiagram
 ---
 
 *Documentation compiled and maintained for vish.al Intelligent Architecture Studio.*
+
