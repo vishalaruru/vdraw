@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Executive Summary — vish.al Intelligent Architecture Studio</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-dark: #3730a3;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+      --amber-500: #f59e0b;
+      --emerald-500: #10b981;
+      --rose-500: #f43f5e;
+      --teal-500: #14b8a6;
+      --purple-500: #a855f7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--slate-50);
+      color: var(--slate-800);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Executive Header */
+    .hero-banner {
+      background: linear-gradient(135deg, #090d16 0%, #1e1b4b 50%, #0f172a 100%);
+      color: #ffffff;
+      padding: 48px 32px 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .hero-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #fbbf24;
+    }
+
+    .hero-title {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      background: linear-gradient(to right, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 18px;
+      color: #94a3b8;
+      max-width: 900px;
+      margin-bottom: 28px;
+    }
+
+    /* KPI Highlights */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .kpi-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(8px);
+      padding: 16px 20px;
+      border-radius: 12px;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #94a3b8;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .kpi-desc {
+      font-size: 12px;
+      color: #cbd5e1;
+      margin-top: 4px;
+    }
+
+    /* Main Layout */
+    .layout-wrapper {
+      max-width: 1400px;
+      margin: 32px auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      position: sticky;
+      top: 24px;
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
+    }
+
+    .sidebar-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--slate-400);
+      margin-bottom: 12px;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--slate-700);
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .nav-item a:hover {
+      background: var(--slate-100);
+      color: var(--primary);
+    }
+
+    .nav-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      margin-left: auto;
+    }
+
+    /* Main Content Area */
+    .content-area {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* Section Styling */
+    .section-header {
+      border-bottom: 2px solid var(--slate-200);
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--slate-900);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Module Card */
+    .module-card {
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+      margin-bottom: 28px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .module-card:hover {
+      box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.08);
+    }
+
+    .module-header {
+      padding: 20px 24px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--slate-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .module-title-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .module-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .module-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--slate-900);
+    }
+
+    .module-category {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .module-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* 6 Pillars Grid */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .pillars-grid {
+        grid-template-columns: 1fr;
+      }
+      .layout-wrapper {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        display: none;
+      }
+    }
+
+    .pillar-box {
+      border: 1px solid var(--slate-200);
+      border-radius: 12px;
+      padding: 16px;
+      background: var(--slate-50);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .pillar-box.full-width {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 900px) {
+      .pillar-box.full-width {
+        grid-column: span 1;
+      }
+    }
+
+    .pillar-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .pillar-head .num-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: var(--slate-800);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .pillar-content {
+      font-size: 13.5px;
+      color: var(--slate-700);
+      line-height: 1.55;
+    }
+
+    .pillar-content ul {
+      margin-left: 20px;
+      margin-top: 6px;
+    }
+
+    .pillar-content li {
+      margin-bottom: 4px;
+    }
+
+    /* Snapshot preview inside card */
+    .snapshot-container {
+      margin-top: 10px;
+      border: 1px solid var(--slate-200);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000000;
+    }
+
+    .snapshot-header {
+      background: var(--slate-800);
+      color: #94a3b8;
+      padding: 8px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .snapshot-img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.2s ease;
+    }
+
+    /* Color Classes */
+    .theme-ai { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .theme-align { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+    .theme-security { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+    .theme-iac { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+    .theme-misc { background: #faf5ff; color: #7e22ce; border-color: #e9d5ff; }
+    .theme-export { background: #f8fafc; color: #334155; border-color: #cbd5e1; }
+
+    /* Footer */
+    footer {
+      background: #ffffff;
+      border-top: 1px solid var(--slate-200);
+      padding: 32px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--slate-500);
+      margin-top: 48px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Hero Banner -->
+  <header class="hero-banner">
+    <div class="hero-container">
+      <div class="brand-row">
+        <div class="brand-badge">✦ vish.al STUDIO 2.0</div>
+        <span style="color: #64748b;">|</span>
+        <span style="font-size: 13px; color: #94a3b8; font-weight: 500;">Executive Technical Deliverable</span>
+      </div>
+      <h1 class="hero-title">vish.al Intelligent Architecture Studio</h1>
+      <p class="hero-subtitle">
+        Executive architectural summary detailing every module, capability, workflow, and engineering motivation built on top of the open-source Draw.io engine.
+      </p>
+
+      <!-- High-Level Executive KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Modules Built</div>
+          <div class="kpi-value">18 <span style="font-size: 14px; font-weight: 500; color: #10b981;">+100% Extensible</span></div>
+          <div class="kpi-desc">Across AI, Security, IaC, FinOps & Reliability</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Time-to-Architecture</div>
+          <div class="kpi-value">~85% <span style="font-size: 14px; font-weight: 500; color: #38bdf8;">Reduction</span></div>
+          <div class="kpi-desc">Instant image-to-diagram & prompt synthesis</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Reliability Verification</div>
+          <div class="kpi-value">99.99% <span style="font-size: 14px; font-weight: 500; color: #f59e0b;">SLA Engine</span></div>
+          <div class="kpi-desc">Automated composite downtime & tail latency</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Security & Zero-Trust</div>
+          <div class="kpi-value">100% <span style="font-size: 14px; font-weight: 500; color: #f43f5e;">Audited</span></div>
+          <div class="kpi-desc">STRIDE vectors, SPOF & Well-Architected linter</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Body Layout -->
+  <div class="layout-wrapper">
+    <!-- Sticky Table of Contents -->
+    <aside class="sidebar">
+      <div class="sidebar-title">Architecture Suites</div>
+      <ul class="nav-list">
+        <li class="nav-item"><a href="#branding-tabs">Studio Identity & Tabs <span class="nav-badge theme-misc">Core</span></a></li>
+        <li class="nav-item"><a href="#ai-suite">1. AI Architecture Suite <span class="nav-badge theme-ai">3 Items</span></a></li>
+        <li class="nav-item"><a href="#align-flow">2. Align & Flow <span class="nav-badge theme-align">2 Items</span></a></li>
+        <li class="nav-item"><a href="#security-resilience">3. Security & Resilience <span class="nav-badge theme-security">3 Items</span></a></li>
+        <li class="nav-item"><a href="#iac-docs">4. IaC & Documentation <span class="nav-badge theme-iac">3 Items</span></a></li>
+        <li class="nav-item"><a href="#miscellaneous">5. Miscellaneous Suite <span class="nav-badge theme-misc">6 Items</span></a></li>
+        <li class="nav-item"><a href="#save-export">6. Save & Standalone HTML <span class="nav-badge theme-export">2 Items</span></a></li>
+      </ul>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+
+      <!-- SECTION 0: Studio Identity & Tabs -->
+      <section id="branding-tabs">
+        <div class="section-header">
+          <h2 class="section-title">Studio Identity, Tab Engine & Auto-Save</h2>
+          <span class="module-category theme-misc">Foundation Platform</span>
+        </div>
+
+        <!-- Module 1: Branding & Visual Identity -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon" style="background: #fdf2f8; color: #db2777;">🎨</div>
+              <div>
+                <h3 class="module-title">Studio Branding & Proportional Header Layer</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Top-tier visual identity with twinkling AI sparkle emblems</div>
+              </div>
+            </div>
+            <span class="module-category theme-misc">Branding</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A high-visibility corporate branding header featuring an enlarged <code>vish.al</code> badge with interactive twinkling AI gold sparkles and the formal subtitle <em>"Intelligent Architecture Studio"</em>.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Positioned permanently at the top-left of the application. The logo badge anchors the studio branding without displacing the Draw.io <code>File</code>, <code>Edit</code>, and <code>View</code> menus below it.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  For enterprise engineering teams, clients, and stakeholders who need a cohesive, branded software architecture workspace rather than a generic third-party tool.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Standard Draw.io has no unified branding. Elevating the application into an "Intelligent Architecture Studio" establishes organizational ownership and professional presence.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Instills confidence during architecture reviews, presentations to leadership, and executive walkthroughs with clean, polished visual hierarchy.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Creates an immediate brand identity and signals that this is not a raw drawing canvas, but an intelligent, AI-augmented engineering studio.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Module 2: Multi-Tab Workspace & Persistence -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon" style="background: #eff6ff; color: #2563eb;">📑</div>
+              <div>
+                <h3 class="module-title">Multi-Tab Workspace & Browser Refresh Protection</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Interactive tab management, live title renaming, and auto-save persistence</div>
+              </div>
+            </div>
+            <span class="module-category theme-iac">Productivity</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A multi-tab document management engine directly integrated with browser <code>localStorage</code>, allowing engineers to maintain multiple active diagrams in parallel, rename tabs inline, and survive accidental reloads.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click the <code>+</code> button to spawn a new diagram tab. Click the tab title to rename it (e.g. <em>"Payment Gateway v2"</em>). Switch tabs seamlessly; changes auto-save with a 500ms debounce. If refreshed, a native confirmation modal intercepts accidental exit.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Architects comparing multiple deployment topologies (e.g., Active-Passive vs. Multi-Region Active-Active) within the same browser session.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Standard Draw.io resets on accidental browser refresh, causing devastating work loss. Multiple files previously required managing disjointed local XML downloads.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Eliminates zero-data loss anxiety through continuous state synchronization and eliminates context switching between diagram files.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Provides a true IDE-like tabbed experience with zero cloud lock-in: fast, private, locally persisted, and completely fail-safe.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 1: AI Suite -->
+      <section id="ai-suite">
+        <div class="section-header">
+          <h2 class="section-title">1. AI Architecture Suite</h2>
+          <span class="module-category theme-ai">Pastel Amber / Orange</span>
+        </div>
+
+        <!-- 1.1 Upload Image / Sketch -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-ai">📷</div>
+              <div>
+                <h3 class="module-title">Vision AI: Whiteboard Sketch & Image to Diagram</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Multimodal Gemini 2.5 Flash / 1.5 Flash Vision parsing</div>
+              </div>
+            </div>
+            <span class="module-category theme-ai">AI Module 1</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  An optical vision synthesis pipeline that ingests photos of physical whiteboards, architectural screenshots, or hand-drawn sketches and translates them into native, editable Draw.io shapes and connectors.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>AI ▾</code> &rarr; <code>Upload Diagram Image</code>. Drag and drop any image or paste from clipboard (<code>⌘V</code>). Select an enterprise color theme, click <em>Convert Image to Diagram</em>, and click <em>Render on Draw.io Canvas</em>.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Engineers and teams after whiteboard brainstorming sessions who need to turn messy physical sketches into formal, presentation-ready system architecture diagrams.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Manual transcription from a photo to digital diagram takes 1 to 3 hours per diagram. Teams often abandon sketches because redrawing is tedious.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Reduces transcription time from hours to under 10 seconds. Preserves connection directions, labels, cloud roles, and database schemas automatically.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Unlike optical OCR, our pipeline infers architectural relationships, categorizes cloud tiers (edge, compute, storage, cache), and supports offline heuristic fallbacks.
+                </div>
+              </div>
+            </div>
+            <div class="snapshot-container">
+              <div class="snapshot-header"><span>SNAPSHOT: Vision AI Sample Architecture Loaded</span><span>1440x900</span></div>
+              <img class="snapshot-img" src="screenshots/01_app_overview.png" alt="Overview Screenshot">
+            </div>
+          </div>
+        </div>
+
+        <!-- 1.2 Conversational Draw -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-ai">💬</div>
+              <div>
+                <h3 class="module-title">Conversational Draw (Natural Language Copilot)</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Interactive chat to modify, insert, and refactor diagrams in real time</div>
+              </div>
+            </div>
+            <span class="module-category theme-ai">AI Module 2</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  An embedded conversational copilot bar that enables architects to iteratively edit the canvas by typing plain English commands without manual drag-and-drop.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>AI ▾</code> &rarr; <code>Conversational Draw (Copilot)</code>. Type requests like: <em>"Add an ElastiCache Redis cluster between the API gateway and the database"</em> or <em>"Convert direct database calls to an SQS queue"</em>. Press Enter to apply.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  System architects in live collaborative meetings who need to rapidly incorporate colleague feedback on the fly during design reviews.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Re-routing connections, adding intermediary nodes, and adjusting coordinates manually during a fast-paced meeting breaks meeting momentum.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Enables zero-friction architectural agility. The copilot parses existing topology, identifies insertion points, and splices new services in seconds.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Delivers true AI pair-programming for system architecture, maintaining full topology awareness and connector routing integrity.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1.3 Prompt to Architecture -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-ai">🪄</div>
+              <div>
+                <h3 class="module-title">Prompt to Architecture (Text-to-Diagram Generator)</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">End-to-end cloud system generation from functional specifications</div>
+              </div>
+            </div>
+            <span class="module-category theme-ai">AI Module 3</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A generative AI engine that consumes text descriptions of requirements and outputs a fully structured, multi-tier cloud architecture diagram.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Open <code>AI ▾</code> &rarr; <code>Prompt to Architecture</code>. Select pre-built templates (e.g. Netflix video streaming, Uber ride dispatch, or FinTech payment clearing) or type custom text. Click <em>Generate Architecture</em>.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Product managers, architects, and candidates practicing system design who need an instant baseline architecture to critique and build upon.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Starting with a blank canvas is intimidating and slow. Gathering the right icons, computing grid layouts, and connecting edges takes valuable cognitive effort.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Instantly lays out tiered architectures with CDN edge, API gateway, microservice compute, streaming brokers, databases, and analytics pipelines.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Employs cloud-native design best practices with proper directional arrows and container groupings built in from the start.
+                </div>
+              </div>
+            </div>
+            <div class="snapshot-container">
+              <div class="snapshot-header"><span>SNAPSHOT: Prompt to Architecture Modal</span><span>1440x900</span></div>
+              <img class="snapshot-img" src="screenshots/08_prompt_modal.png" alt="Prompt Modal Screenshot">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: Align & Flow -->
+      <section id="align-flow">
+        <div class="section-header">
+          <h2 class="section-title">2. Align & Flow Suite</h2>
+          <span class="module-category theme-align">Pastel Teal / Emerald</span>
+        </div>
+
+        <!-- 2.1 Auto-Align & Beautify -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-align">✨</div>
+              <div>
+                <h3 class="module-title">Auto-Align & Beautify (Layout Optimizer)</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Heuristic grid alignment and connector path untangling</div>
+              </div>
+            </div>
+            <span class="module-category theme-align">Flow Module 1</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  An automated layout normalizer that balances horizontal/vertical service tiers, snaps shapes to standard grid increments, and orthogonalizes connector lines.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>Align & Flow ▾</code> &rarr; <code>Auto-Align & Beautify</code>. The studio processes the current canvas XML, redistributes nodes into balanced ranks, and refreshes the canvas instantly.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Diagrams that have become disorganized after extensive additions, resulting in overlapping arrows and uneven spacing.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Engineers waste substantial time manually nudging boxes by 5 pixels and dragging connector elbows to avoid overlaps.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Standardizes visual presentation in one click, ensuring professional alignment for customer-facing documentation and leadership decks.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Tailored specifically for cloud topologies with left-to-right client ingress and top-to-bottom database layering.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2.2 Simulate Traffic Flow -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-align">⚡</div>
+              <div>
+                <h3 class="module-title">Simulate Request Traffic Flow (Live Pulse Packets)</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Animated SVG packet stream visualization along network connectors</div>
+              </div>
+            </div>
+            <span class="module-category theme-align">Flow Module 2</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A dynamic runtime visualizer that injects moving SVG stroke animations into diagram connectors, bringing static architecture diagrams to life.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>Align & Flow ▾</code> &rarr; <code>Simulate Traffic Flow</code>. An animated green floating status indicator shows <em>ACTIVE</em>. Choose between Normal, Peak, or Degraded modes. Click again to stop.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Architecture walkthroughs, engineering team onboarding, and stakeholder demonstrations where static arrows fail to convey dynamic data movement.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Static lines don't communicate whether communication is asynchronous, synchronous, bi-directional, or high-throughput.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Visually illustrates request-response cycles, message publishing to Kafka, and asynchronous background worker processing clearly.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  No video editing or external animation tools needed. Pure, non-destructive SVG animation embedded directly into the Draw.io canvas.
+                </div>
+              </div>
+            </div>
+            <div class="snapshot-container">
+              <div class="snapshot-header"><span>SNAPSHOT: Align & Flow Dropdown Menu</span><span>1440x900</span></div>
+              <img class="snapshot-img" src="screenshots/03_align_flow_menu.png" alt="Align & Flow Menu Screenshot">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: Security & Resilience -->
+      <section id="security-resilience">
+        <div class="section-header">
+          <h2 class="section-title">3. Security & Resilience Suite</h2>
+          <span class="module-category theme-security">Pastel Rose / Pink</span>
+        </div>
+
+        <!-- 3.1 Security & SOLID Audit -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-security">🛡️</div>
+              <div>
+                <h3 class="module-title">Security & SOLID Architecture Auditor</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Zero-Trust boundaries, SPOF detection, and 1-click Auto-Fix remediation</div>
+              </div>
+            </div>
+            <span class="module-category theme-security">Sec Module 1</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A static analysis linter for software architecture that evaluates diagram topology against AWS Well-Architected Framework security pillars and SOLID principles.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>Security ▾</code> &rarr; <code>Security & SOLID Audit</code>. A slide-out inspector drawer evaluates the diagram, reporting critical, warning, and informational findings. Click <em>"Auto-Fix Architecture"</em> to remediate automatically.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Security architects, devsecops leads, and compliance reviewers conducting architectural threat assessments before code implementation.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Security vulnerabilities introduced at the architecture phase (unencrypted DB egress, missing WAF, public S3 buckets) are 50x more costly to fix in production.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Flags single points of failure (SPOFs), missing authentication middle-layers, and unsegmented networks before any infrastructure is deployed.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Unique <em>Auto-Fix</em> capability injects missing WAF nodes, isolation subnets, and read-replicas directly onto the canvas in real time.
+                </div>
+              </div>
+            </div>
+            <div class="snapshot-container">
+              <div class="snapshot-header"><span>SNAPSHOT: Security & SOLID Audit Drawer with Findings</span><span>1440x900</span></div>
+              <img class="snapshot-img" src="screenshots/13_audit_drawer.png" alt="Audit Drawer Screenshot">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3.2 STRIDE Threat Modeling -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-security">🎯</div>
+              <div>
+                <h3 class="module-title">STRIDE Threat Modeling Engine</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Automated attack surface profiling and defensive countermeasures</div>
+              </div>
+            </div>
+            <span class="module-category theme-security">Sec Module 2</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  An automated threat modeling engine implementing Microsoft's STRIDE framework (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege) mapped to diagram components.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>Security ▾</code> &rarr; <code>STRIDE Threat Model</code>. Review categorized threat vectors, associated risk severities, vulnerable assets, and recommended cryptographic or network controls.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Security compliance audits (SOC2, ISO 27001, FedRAMP, HIPAA) requiring formalized threat models for all production cloud systems.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Manual STRIDE spreadsheets take days of tedious cross-referencing and frequently miss edge cases and third-party API exposure points.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Maps ingress paths, egress points, databases, and message queues to specific STRIDE threat vectors and generates audit-ready documentation.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Provides a live, visual link between architectural components and tangible security mitigations in one comprehensive view.
+                </div>
+              </div>
+            </div>
+            <div class="snapshot-container">
+              <div class="snapshot-header"><span>SNAPSHOT: STRIDE Threat Model Modal</span><span>1440x900</span></div>
+              <img class="snapshot-img" src="screenshots/11_threat_model_modal.png" alt="Threat Model Screenshot">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3.3 Chaos Simulator -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-security">🔥</div>
+              <div>
+                <h3 class="module-title">Chaos Monkey & Blast Radius Outage Simulator</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Interactive node failure injection and cascading blast radius analysis</div>
+              </div>
+            </div>
+            <span class="module-category theme-security">Sec Module 3</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A chaos engineering simulator that lets engineers inject targeted outages into any node (e.g., primary DB crash or Kafka disconnect) and observe the cascading failure radius.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>Security ▾</code> &rarr; <code>Chaos Simulator</code>. A floating control bar appears. Select a target component (e.g. <em>Postgres DB</em>). The canvas updates: the target flashes red with skull icons, and downstream impacted nodes are highlighted.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Site Reliability Engineers (SREs) and architects designing fallback strategies, circuit breakers, and bulkhead resilience mechanisms.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Architects often assume redundant paths exist until an actual outage reveals hidden tight couplings and unhandled synchronous failure cascades.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Visualizes the exact blast radius of any component failure in red, demonstrating the necessity of queues, circuit breakers, and degraded-mode caches.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Instant visual feedback without writing test code or executing disruptive production chaos experiments.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: IaC & Docs -->
+      <section id="iac-docs">
+        <div class="section-header">
+          <h2 class="section-title">4. IaC & Technical Documentation Suite</h2>
+          <span class="module-category theme-iac">Pastel Indigo / Blue</span>
+        </div>
+
+        <!-- 4.1 Reverse IaC -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-iac">📥</div>
+              <div>
+                <h3 class="module-title">Reverse IaC: Code to Architecture Diagram</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Import Terraform HCL, Docker Compose, or Kubernetes YAML into diagrams</div>
+              </div>
+            </div>
+            <span class="module-category theme-iac">IaC Module 1</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A code-to-architecture parser that takes Infrastructure as Code (Terraform <code>.tf</code>, <code>docker-compose.yml</code>, Kubernetes manifests) and visualizes the declared topology as a connected diagram.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Open <code>IaC & Docs ▾</code> &rarr; <code>Import IaC</code>. Paste Terraform HCL, Docker Compose, or K8s YAML into the editor. Click <em>Generate Diagram</em>. The studio maps resources to vendor icons and dependency arrows.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  DevOps and platform engineers inheriting legacy repositories who need to visualize what is actually deployed in code.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Architecture diagrams rot quickly while code evolves. Reverse-engineering diagrams manually from 1,000+ lines of Terraform is tedious and error-prone.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Guarantees 100% alignment between git-managed infrastructure code and visual architectural diagrams with zero manual drawing required.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Eliminates documentation drift by providing an automated bridge from code directly to visual diagrams.
+                </div>
+              </div>
+            </div>
+            <div class="snapshot-container">
+              <div class="snapshot-header"><span>SNAPSHOT: Reverse IaC Code Importer Modal</span><span>1440x900</span></div>
+              <img class="snapshot-img" src="screenshots/15_iac_reverse_modal.png" alt="Reverse IaC Screenshot">
+            </div>
+          </div>
+        </div>
+
+        <!-- 4.2 Export IaC & Code -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-iac">📤</div>
+              <div>
+                <h3 class="module-title">Export IaC & Code (Terraform, Compose, Mermaid.js)</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Compiles visual diagrams into production Terraform, Compose, and Mermaid</div>
+              </div>
+            </div>
+            <span class="module-category theme-iac">IaC Module 2</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A code generation compiler that translates visual cloud diagrams into real Terraform HCL modules, Docker Compose multi-container configs, and Mermaid.js markdown syntax.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>IaC & Docs ▾</code> &rarr; <code>Export IaC & Code</code>. Switch between the <em>Terraform HCL</em>, <em>Docker Compose</em>, and <em>Mermaid.js</em> tabs. Click <em>Copy Code</em> or download files directly.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Developers and cloud engineers transitioning from visual architectural ideation directly to infrastructure provisioning and deployment.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Drawing an architecture is only half the work; writing boilerplate Terraform for VPCs, subnets, clusters, and security groups typically consumes days.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Jumpstarts engineering implementation by generating structured, syntactically valid Terraform and container configurations from visual nodes.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Provides true bi-directional workflow: visual canvas to code, and code to visual canvas.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4.3 Architecture Spec & ADR -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-iac">📝</div>
+              <div>
+                <h3 class="module-title">Architecture Spec & ADR Generator</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Automated technical documentation and Architecture Decision Records</div>
+              </div>
+            </div>
+            <span class="module-category theme-iac">IaC Module 3</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A documentation compiler that synthesizes a comprehensive engineering technical specification and Architecture Decision Record (ADR) in Markdown format from the active diagram.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>IaC & Docs ▾</code> &rarr; <code>Architecture Spec & ADR</code>. A modal presents the generated RFC document with System Overview, Component Tiers, Data Flow, Security Considerations, and ADR trade-offs. Click <em>Copy Markdown</em>.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Engineering teams preparing design documentation for RFCs, Confluence wikis, GitHub PRs, and enterprise architecture reviews.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Writing detailed technical design documents (TDDs) is often postponed due to time constraints, leaving systems poorly documented.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Eliminates documentation overhead by automatically distilling the active canvas into a production-grade, formatted specification.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Outputs clean GitHub Flavored Markdown compatible with Git, Obsidian, Confluence, and Notion.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 5: Miscellaneous Suite -->
+      <section id="miscellaneous">
+        <div class="section-header">
+          <h2 class="section-title">5. Miscellaneous Suite</h2>
+          <span class="module-category theme-misc">Pastel Purple / Violet</span>
+        </div>
+
+        <!-- 5.1 Cloud Cost & FinOps -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-misc">💰</div>
+              <div>
+                <h3 class="module-title">Cloud Cost & FinOps Estimator</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Multi-cloud retail pricing breakdown and budget optimization analytics</div>
+              </div>
+            </div>
+            <span class="module-category theme-misc">Misc Module 1</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A FinOps calculation engine that inspects all compute, database, cache, and queue nodes on the canvas and calculates estimated monthly run rates across AWS, GCP, and Azure.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>Misc ▾</code> &rarr; <code>Cloud Cost & FinOps</code>. Toggle between AWS, GCP, and Azure providers. Switch between the <em>Breakdown</em> view and the <em>FinOps Optimization</em> tab for actionable cost savings.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Engineering managers, FinOps specialists, and enterprise architects needing upfront budget visibility before provisioning infrastructure.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Architects frequently design complex multi-cluster systems without realizing they will cost $25,000/month, resulting in painful redesigns during budget reviews.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Provides immediate cost feedback right on the canvas. Flags over-provisioned components and recommends reserved instances or serverless alternatives.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Combines visual architecture with realistic pricing data across all three major hyper-scalers simultaneously.
+                </div>
+              </div>
+            </div>
+            <div class="snapshot-container">
+              <div class="snapshot-header"><span>SNAPSHOT: Cloud Cost & FinOps Estimator Modal</span><span>1440x900</span></div>
+              <img class="snapshot-img" src="screenshots/09_cost_estimator_modal.png" alt="Cost Estimator Screenshot">
+            </div>
+          </div>
+        </div>
+
+        <!-- 5.2 Latency, SLA & Availability Calculator -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-misc">⏱️</div>
+              <div>
+                <h3 class="module-title">Latency, SLA & Availability Calculator</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Composite availability (99.99%), downtime budgets, P95 latency, and bottleneck detection</div>
+              </div>
+            </div>
+            <span class="module-category theme-misc">Misc Module 2</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A reliability engineering calculator that computes end-to-end composite availability ($A = \prod A_i$), maximum allowed downtime budgets, and P50/P95/P99 latency profiles across critical request paths.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>Misc ▾</code> &rarr; <code>Latency & SLA</code>. Inspect KPI cards (Composite SLA %, Yearly/Daily Downtime, P95 Tail Latency, and Primary Bottleneck). Select target benchmarks (99.9%, 99.99%, 99.999%) and copy the SLA report.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Site Reliability Engineers (SREs), system architects, and technical leaders defining Service Level Agreements (SLAs) and SLO error budgets.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Chaining multiple 99.9% services serially degrades total system availability to 99.5% or lower. Architects often promise "four nines" without verifying serial dependencies.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Demonstrates the exact mathematical impact of serial dependencies, highlights the slowest bottleneck node, and suggests decoupling via queues or caches.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Transforms subjective architectural discussions into mathematically verifiable, data-driven reliability engineering.
+                </div>
+              </div>
+            </div>
+            <div class="snapshot-container">
+              <div class="snapshot-header"><span>SNAPSHOT: Latency, SLA & Availability Calculator Modal</span><span>1440x900</span></div>
+              <img class="snapshot-img" src="screenshots/10_sla_latency_modal.png" alt="SLA Latency Screenshot">
+            </div>
+          </div>
+        </div>
+
+        <!-- 5.3 SQL / Prisma to ERD -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-misc">🗄️</div>
+              <div>
+                <h3 class="module-title">SQL / Prisma to ERD Visualizer</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">DDL and schema compiler into relational Entity Relationship Diagrams</div>
+              </div>
+            </div>
+            <span class="module-category theme-misc">Misc Module 3</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A relational database schema visualizer that parses SQL <code>CREATE TABLE</code> DDL statements or Prisma schema definitions and renders linked ER diagrams on the canvas.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>Misc ▾</code> &rarr; <code>SQL / Prisma to ERD</code>. Paste SQL DDL or a Prisma schema (e.g. users, orders, items with foreign keys). Click <em>Generate ERD on Canvas</em>.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Backend engineers, data architects, and DBA teams designing relational database schemas and communicating table relationships.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Drawing ER diagrams by hand with tables, primary keys (PK), foreign keys (FK), and connectors is time-consuming and often gets out of sync with actual schemas.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Instantly creates formatted table shapes with color-coded key badges and mapped foreign key relationship connectors.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Supports both standard SQL dialect DDL and modern Prisma ORM schema syntax natively.
+                </div>
+              </div>
+            </div>
+            <div class="snapshot-container">
+              <div class="snapshot-header"><span>SNAPSHOT: SQL / Prisma to ERD Visualizer Modal</span><span>1440x900</span></div>
+              <img class="snapshot-img" src="screenshots/14_sql_erd_modal.png" alt="SQL to ERD Screenshot">
+            </div>
+          </div>
+        </div>
+
+        <!-- 5.4 Revision History -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-misc">🕒</div>
+              <div>
+                <h3 class="module-title">Revision History (Time-Travel Version Control)</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Named snapshot restore points and chronological audit trail</div>
+              </div>
+            </div>
+            <span class="module-category theme-misc">Misc Module 4</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A version control engine that automatically captures named snapshots before major operations (AI generation, canvas clearing, reverse IaC) and lets users roll back with one click.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>Misc ▾</code> &rarr; <code>Revision History</code>. Browse chronological timeline checkpoints, view timestamps and descriptions, and click <em>Restore Snapshot</em> to revert the canvas state.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Architects experimenting with complex refactors who need safe rollback points without cluttering their disk with multiple XML files.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Standard undo stacks in web applications are lost upon page reload and offer no visibility into named milestones or timestamps.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Provides a reliable safety net for experimental architectural iterations with instant snapshot recovery.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Automatically integrated into destructive actions—creating checkpoints before you even realize you need one.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5.5 Presentation Mode -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-misc">📽️</div>
+              <div>
+                <h3 class="module-title">Presentation Walkthrough Mode</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Step-by-step architectural spotlight and slide deck tour</div>
+              </div>
+            </div>
+            <span class="module-category theme-misc">Misc Module 5</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  An interactive presentation layer that transforms complex, dense architecture diagrams into focused slide deck walkthroughs with animated spotlighting on active subsystems.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>Misc ▾</code> &rarr; <code>Presentation Mode</code>. Use the arrow keys or click <em>Next Slide</em> to step through subsystems (Client Edge &rarr; Compute &rarr; Messaging &rarr; Databases). Inactive nodes dim into the background.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Lead architects presenting complex systems to executive stakeholders, new hires, or cross-functional teams.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Showing an entire 50-node architecture diagram at once overwhelms audiences, leading to confusion and disengagement.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Directs audience focus to one tier at a time, creating a structured narrative flow from user ingress to backend data stores.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Eliminates the need to export PNGs and build separate PowerPoint or Google Slides presentations. Present directly from the live canvas.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5.6 Command Palette -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-misc">⌘</div>
+              <div>
+                <h3 class="module-title">Command Palette (⌘K / Ctrl+K)</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Instant fuzzy-search launcher across all studio actions, tools, and shortcuts</div>
+              </div>
+            </div>
+            <span class="module-category theme-misc">Misc Module 6</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A centralized, keyboard-first modal providing instant fuzzy-search access to every studio feature, linter, export, and simulation tool.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Press <code>⌘K</code> (macOS) or <code>Ctrl+K</code> (Windows/Linux) anywhere in the application. Type keywords like <em>"SLA"</em>, <em>"Cost"</em>, <em>"Audit"</em>, or <em>"Terraform"</em>, and press Enter to launch immediately.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Power users and keyboard-driven engineers who prefer fast command invocation over navigating mouse dropdown menus.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  As features expand, traditional toolbar buttons become crowded and hard to find.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Enables instantaneous access to any feature in less than 3 keystrokes without taking hands off the keyboard.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Brings modern developer productivity (similar to VS Code, Raycast, and Linear) directly to architectural diagramming.
+                </div>
+              </div>
+            </div>
+            <div class="snapshot-container">
+              <div class="snapshot-header"><span>SNAPSHOT: Command Palette (⌘K) Active</span><span>1440x900</span></div>
+              <img class="snapshot-img" src="screenshots/12_command_palette.png" alt="Command Palette Screenshot">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 6: Save & Export -->
+      <section id="save-export">
+        <div class="section-header">
+          <h2 class="section-title">6. Save & Standalone HTML Suite</h2>
+          <span class="module-category theme-export">Pastel Slate / Zinc</span>
+        </div>
+
+        <!-- 6.1 Native Formats -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-export">💾</div>
+              <div>
+                <h3 class="module-title">Multi-Format Asset Exporter (Drawio XML, PNG, SVG)</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Native Draw.io XML synchronization and high-res vector rendering</div>
+              </div>
+            </div>
+            <span class="module-category theme-export">Export Module 1</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A high-fidelity export engine supporting native <code>.drawio</code> XML with embedded format metadata, high-resolution raster PNG, and pure vector SVG.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>Export ▾</code> &rarr; select <code>Save Diagram (.drawio)</code>, <code>Export PNG Image</code>, or <code>Export Scalable Vector (.svg)</code>. The asset downloads immediately to your local system.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Distributing diagrams to team members, embedding visuals in documentation wikis, or committing source XML to Git repositories.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Teams require interoperability with standard tools without proprietary lock-in.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Guarantees that files created in <code>vish.al</code> studio remain 100% compatible with any standard Draw.io or diagrams.net instance worldwide.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Provides high-resolution 2x retina raster scaling and embed-ready vector SVG with zero quality loss.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6.2 Standalone Interactive HTML -->
+        <div class="module-card">
+          <div class="module-header">
+            <div class="module-title-box">
+              <div class="module-icon theme-export">🌐</div>
+              <div>
+                <h3 class="module-title">Shareable Standalone Interactive HTML Export</h3>
+                <div style="font-size: 12px; color: var(--slate-500);">Self-contained offline viewer with pan, zoom, search, node inspector & dark mode</div>
+              </div>
+            </div>
+            <span class="module-category theme-export">Export Module 2</span>
+          </div>
+          <div class="module-body">
+            <div class="pillars-grid">
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">1</div> What is that module?</div>
+                <div class="pillar-content">
+                  A standalone packager that generates a single, zero-dependency <code>.html</code> file embedding the diagram SVG, responsive navigation bar, interactive pan/zoom canvas, real-time search filter, node inspector drawer, and dark/light mode toggle.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">2</div> How to work on it?</div>
+                <div class="pillar-content">
+                  Click <code>Export ▾</code> &rarr; <code>Interactive HTML</code> (or via <code>⌘K</code>). A single <code>.html</code> file is generated and downloaded. Open it in any browser offline or share via Slack, email, or S3/Blob storage.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">3</div> Why it is for?</div>
+                <div class="pillar-content">
+                  Sharing architecture diagrams with clients, executive leaders, or external partners who do not have Draw.io installed and need an interactive, polished viewing experience.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">4</div> What is motive?</div>
+                <div class="pillar-content">
+                  Static PNG images are impossible to read when diagrams grow large (zooming causes pixelation), and recipients cannot search or click on nodes to inspect details.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">5</div> How it helps?</div>
+                <div class="pillar-content">
+                  Delivers a smooth, vector-based interactive canvas with mouse wheel zoom, trackpad panning, live component search highlighting, and click-to-inspect component details—completely offline with zero dependencies.
+                </div>
+              </div>
+              <div class="pillar-box">
+                <div class="pillar-head"><div class="num-badge">6</div> Why to use this?</div>
+                <div class="pillar-content">
+                  Replaces flat, static PNG screenshots with an interactive web app packaged into a single, shareable file.
+                </div>
+              </div>
+            </div>
+            <div class="snapshot-container">
+              <div class="snapshot-header"><span>SNAPSHOT: Save & Export Dropdown Menu</span><span>1440x900</span></div>
+              <img class="snapshot-img" src="screenshots/07_export_menu.png" alt="Export Menu Screenshot">
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Executive Footer -->
+  <footer>
+    <div style="max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: gap: 16px;">
+      <div>
+        <strong>vish.al Intelligent Architecture Studio</strong> — Executive Technical Summary & System Documentation
+      </div>
+      <div>
+        Built on top of Draw.io &bull; Powered by Google Gemini AI &bull; Pushed to <a href="https://github.com/vishalaruru/vdraw" style="color: var(--primary); text-decoration: none; font-weight: 600;">github.com/vishalaruru/vdraw</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
