@@ -70,3 +70,4 @@ npm run build
 2. Follow standard TypeScript formatting and maintain modular service boundaries.
 3. Commit with semantic messages (e.g., `feat: add Snowflake pricing model to FinOps estimator`).
 4. Push to your fork and submit a Pull Request to `main`.
+

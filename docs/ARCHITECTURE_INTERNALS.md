@@ -93,3 +93,4 @@ The HTML export generates a **zero-dependency, single-file distribution**:
 - Contains a 60fps hardware-accelerated pan-and-zoom transformation matrix:
   $$\text{transform} = \text{translate}(T_x, T_y) \times \text{scale}(S)$$
 - Real-time search traverses SVG text nodes, dimming non-matching elements with `opacity: 0.15` and applying a pulse spotlight to matched components.
+

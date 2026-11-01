@@ -41,3 +41,4 @@ All visual snapshots are captured at high resolution from live enterprise cloud 
 ## 💡 Quick Tips
 - To preview the **Executive Summary Dashboard**, simply open [`docs/EXECUTIVE_SUMMARY.html`](EXECUTIVE_SUMMARY.html) directly in any modern browser.
 - For deep code dive into React state hooks and iframe synchronization, see [`src/components/DrawioEditor.tsx`](../src/components/DrawioEditor.tsx).
+
