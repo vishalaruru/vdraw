@@ -1,48 +1,71 @@
-# Draw.io Studio + Vision AI (Image to Editable Diagram)
+# vish.al Intelligent Architecture Studio
 
-An enhanced **draw.io** clone and visual studio with an integrated **Multimodal Vision AI** pipeline. Upload any flowchart, architectural diagram, whiteboard sketch, or screenshot, and immediately transform it into native, fully interactive, editable draw.io shapes and connectors.
+> Cloud-Native Diagramming, AI Synthesis, Zero-Trust Security, FinOps Costing & SLA Reliability Workbench
 
----
+![Studio Overview](docs/screenshots/01_app_overview.png)
 
-## Features
+**`vish.al` Intelligent Architecture Studio** supercharges Draw.io into an enterprise-grade software engineering workbench. Beyond standard diagramming, it incorporates an AI synthesis pipeline, security and SOLID linters, FinOps multi-cloud pricing calculators, SLA/latency critical-path modeling, and zero-dependency standalone HTML exports.
 
-- **Full draw.io Canvas:** Complete native diagramming environment with all shapes, connectors, alignment tools, format inspector, and canvas controls.
-- **Image-to-Diagram AI Engine:**
-  - **Drop / Paste / Browse:** Drag & drop any image file (PNG, JPG, SVG, WebP) or paste directly from clipboard (<kbd>Cmd+V</kbd> / <kbd>Ctrl+V</kbd>).
-  - **Multimodal AI Detection:** Detects flowchart symbols (processes, decisions/rhombus, database cylinders, start/end ovals, actors, clouds, inputs/outputs), extracts all labels/text, and maps orthogonal connectors.
-  - **Gemini Multimodal API Support:** Seamlessly connect Google Gemini 2.5 Flash / 1.5 Flash Vision models with a single-click API key field.
-  - **Smart Local Heuristic Fallback:** Generates structured diagrams even without an API key.
-- **Theming & Color Palettes:**
-  - *Modern Indigo (Cloud & SaaS)*
-  - *Classic draw.io (Corporate Blue/Yellow)*
-  - *Emerald Mint (Clean/Green)*
-  - *Sunset Coral (Warm Accent)*
-  - *Minimalist Clean (Monochrome)*
-- **One-Click Sample Flowcharts:** Test immediately with pre-built flows:
-  - User Authentication & MFA Workflow
-  - E-Commerce Order & Payment Pipeline
-  - Event-Driven Microservices Architecture
-- **Export & Download:** Save as native `.drawio` XML, PNG, or SVG with one click.
+📖 **[Read the Full System Documentation & Visual Guide (docs/SYSTEM_DOCUMENTATION.md)](docs/SYSTEM_DOCUMENTATION.md)**
 
 ---
 
-## Getting Started
+## 🚀 Key Feature Suites & Menu Re-design
 
-### 1. Install & Run Dev Server
+| Pastel Menu Group | Color Theme | Included Capabilities |
+| :--- | :--- | :--- |
+| **`AI`** | Amber / Orange Pastel | **Upload Image / Sketch** (Gemini Vision AI), **Conversational Draw** (Chat Copilot), **Prompt to Architecture** |
+| **`Align & Flow`** | Teal / Emerald Pastel | **Auto-Align & Beautify** (Force-directed layout cleaning), **Simulate Traffic Flow** (Animated SVG pulse packets) |
+| **`Security`** | Rose / Pink Pastel | **Security & SOLID Audit** (Zero-Trust & SPOF linter with Auto-Fix), **STRIDE Threat Model**, **Chaos Simulator** |
+| **`IaC & Docs`** | Indigo / Blue Pastel | **Import Reverse IaC** (Terraform, Compose, K8s), **Export IaC** (HCL, Docker, Mermaid), **Architecture Spec & ADR** |
+| **`Misc`** | Purple / Violet Pastel | **Cloud Cost & FinOps** (AWS/GCP/Azure breakdown), **Latency & SLA Calculator**, **SQL / Prisma to ERD**, **Revision History**, **Presentation Mode**, **Command Palette (`⌘K`)** |
+| **`Export`** | Slate / Zinc Pastel | **Save .drawio XML**, **Export PNG**, **Export SVG**, **Interactive Standalone HTML** (offline viewer) |
 
+---
+
+## 📸 Visual Snapshots
+
+| Feature | Screenshot |
+| :--- | :--- |
+| **AI Menu** | ![AI Menu](docs/screenshots/02_ai_menu.png) |
+| **Latency, SLA & Downtime Calculator** | ![SLA & Latency](docs/screenshots/10_sla_latency_modal.png) |
+| **Cloud Cost & FinOps Estimator** | ![Cost Estimator](docs/screenshots/09_cost_estimator_modal.png) |
+| **STRIDE Threat Modeling** | ![Threat Model](docs/screenshots/11_threat_model_modal.png) |
+| **Security & SOLID Audit Drawer** | ![Audit Drawer](docs/screenshots/13_audit_drawer.png) |
+| **Command Palette (`⌘K`)** | ![Command Palette](docs/screenshots/12_command_palette.png) |
+| **Database SQL / Prisma to ERD** | ![SQL to ERD](docs/screenshots/14_sql_erd_modal.png) |
+| **Reverse IaC (Terraform / Compose / K8s)** | ![Reverse IaC](docs/screenshots/15_iac_reverse_modal.png) |
+
+---
+
+## 🛠️ Quickstart
+
+### 1. Prerequisites
+- Node.js 18+
+- Modern Web Browser (Chrome, Safari, Edge, Firefox)
+
+### 2. Setup & Installation
 ```bash
-cd /Users/VishalKumar.Aruru/draw.io_clone
+git clone https://github.com/vishalaruru/vdraw.git
+cd vdraw
 npm install
+cp .env.example .env
+# Add your Gemini API key to .env:
+# VITE_GEMINI_API_KEY=your_gemini_api_key_here
 npm run dev
 ```
 
-The application will be live at: **`http://localhost:6173`**
+The application will run at **`http://localhost:6173`**.
 
-### 2. Convert an Image to a Diagram
+---
 
-1. Click **"Upload Diagram Image"** in the top navigation bar.
-2. Drag and drop your flowchart image or click to select a file.
-3. Choose your preferred **Theme** and whether to **Replace Page** or **Append / Merge**.
-4. Click **"Convert Image to Diagram"** &rarr; **"Render on Draw.io Canvas"**.
-5. Your uploaded image is now a native, fully draggable, and editable draw.io diagram!
+## 🧩 Architectural Foundations
 
+- **Host App:** React 19 + TypeScript + Vite + TailwindCSS + Lucide Icons.
+- **Canvas Engine:** Embedded Draw.io runtime utilizing asynchronous `postMessage` protocol for XML synchronization, SVG rasterization, and bidirectional command invocation.
+- **AI Processing:** Multimodal Google Gemini API with fallback heuristic algorithms for offline or air-gapped usage.
+- **Topology Graph Parser:** Custom XML DOM parser extracting node classifications, network boundaries, and edge directions into an adjacency matrix for FinOps and SLA calculations.
+
+---
+
+Distributed under the MIT License. Built with ❤️ for cloud architects and software engineers.
