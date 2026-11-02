@@ -56,8 +56,10 @@ import { SqlToErdModal } from './components/SqlToErdModal';
 import { PresentationModeOverlay } from './components/PresentationModeOverlay';
 import { CommandPaletteModal, CommandItem } from './components/CommandPaletteModal';
 import { SlaLatencyModal } from './components/SlaLatencyModal';
+import { IconBeautifierModal } from './components/IconBeautifierModal';
 import { clearDiagramCache } from './services/diagramCache';
 import { beautifyDiagramXml, LayoutOptions } from './services/diagramBeautifier';
+import { detectIconMatches, beautifyIconsInXml, IconMatchItem } from './services/iconBeautifier';
 import { saveDiagramVersion, getAllVersions } from './services/versionHistory';
 import { auditArchitectureDiagram, ArchitectureAuditResult, SecurityFinding, extractTopologyFromXml } from './services/architectureAuditor';
 import { generateTechSpecDocument } from './services/docGenerator';
@@ -158,7 +160,10 @@ export const App: React.FC = () => {
   const [isSlaModalOpen, setIsSlaModalOpen] = useState(false);
   const [slaReport, setSlaReport] = useState<SlaCalculationReport | null>(null);
   const [isExportingHtml, setIsExportingHtml] = useState(false);
-  const [openSubMenu, setOpenSubMenu] = useState<'ai' | 'align' | 'security' | 'iac' | 'misc' | 'export' | null>(null);
+  // Icon Beautifier Feature
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [detectedIconMatches, setDetectedIconMatches] = useState<IconMatchItem[]>([]);
+  const [openSubMenu, setOpenSubMenu] = useState<'ai' | 'align' | 'icons' | 'security' | 'iac' | 'misc' | 'export' | null>(null);
   const subMenuRef = useRef<HTMLDivElement>(null);
 
   // Close sub-menus when clicking outside
@@ -325,6 +330,73 @@ export const App: React.FC = () => {
       showToast(err instanceof Error ? err.message : 'Layout failed');
     } finally {
       setIsBeautifying(false);
+    }
+  };
+
+  // Icon Beautifier Handlers (Official Cloud & Infra Stencils)
+  const handleInstantIconBeautify = async () => {
+    try {
+      const xmlToProcess = (await editorRef.current?.getCurrentXml()) || currentXml;
+      if (!xmlToProcess || xmlToProcess.length < 200) {
+        showToast('Canvas is empty');
+        return;
+      }
+
+      pushUndoState(xmlToProcess);
+      saveDiagramVersion(activeTabId, xmlToProcess, 'Before Icon Beautify');
+      setVersions(getAllVersions());
+
+      const result = beautifyIconsInXml(xmlToProcess);
+      if (result.updatedCount === 0) {
+        showToast('No new cloud/infra components to upgrade');
+        return;
+      }
+
+      editorRef.current?.loadXml(result.xml);
+      setCurrentXml(result.xml);
+      showToast(`Icon Beautify: Upgraded ${result.updatedCount} component${result.updatedCount > 1 ? 's' : ''} to official cloud icons!`);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to apply icon beautification');
+    }
+  };
+
+  const handleOpenIconModal = async () => {
+    try {
+      const xmlToProcess = (await editorRef.current?.getCurrentXml()) || currentXml;
+      if (!xmlToProcess || xmlToProcess.length < 200) {
+        showToast('Canvas is empty');
+        return;
+      }
+
+      const matches = detectIconMatches(xmlToProcess);
+      if (matches.length === 0) {
+        showToast('No cloud/infra components detected on canvas');
+        return;
+      }
+
+      setDetectedIconMatches(matches);
+      setIsIconModalOpen(true);
+    } catch (err) {
+      console.error(err);
+      showToast('Error scanning components for icons');
+    }
+  };
+
+  const handleApplySelectedIcons = async (selectedIds: string[]) => {
+    try {
+      const xmlToProcess = (await editorRef.current?.getCurrentXml()) || currentXml;
+      pushUndoState(xmlToProcess);
+      saveDiagramVersion(activeTabId, xmlToProcess, 'Before Icon Beautify');
+      setVersions(getAllVersions());
+
+      const result = beautifyIconsInXml(xmlToProcess, selectedIds);
+      editorRef.current?.loadXml(result.xml);
+      setCurrentXml(result.xml);
+      showToast(`Applied official icons to ${result.updatedCount} component${result.updatedCount > 1 ? 's' : ''}!`);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to apply selected icons');
     }
   };
 
@@ -816,6 +888,22 @@ export const App: React.FC = () => {
       category: 'AI & Analysis',
       icon: <Sparkles className="w-4 h-4 text-indigo-500" />,
       action: handleBeautifyCanvas,
+    },
+    {
+      id: 'cmd_icon_beautify_instant',
+      title: 'Icon Beautifier: Instant Auto-Upgrade',
+      subtitle: 'Detect & replace generic boxes with official AWS, GCP, Azure, K8s & DB icons',
+      category: 'AI & Analysis',
+      icon: <Sparkles className="w-4 h-4 text-purple-500" />,
+      action: handleInstantIconBeautify,
+    },
+    {
+      id: 'cmd_icon_beautify_preview',
+      title: 'Icon Beautifier: Preview & Select Icons',
+      subtitle: 'Review matched cloud components and toggle selections before applying',
+      category: 'AI & Analysis',
+      icon: <Layers className="w-4 h-4 text-indigo-500" />,
+      action: handleOpenIconModal,
     },
     {
       id: 'cmd_tech_spec',
@@ -1414,6 +1502,80 @@ export const App: React.FC = () => {
                     </div>
                   </button>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Group 2.5: Icon Beautifier */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setOpenSubMenu(openSubMenu === 'icons' ? null : 'icons')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[5px] text-[12px] font-semibold transition-all border cursor-pointer ${
+                openSubMenu === 'icons'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-transparent shadow-xs ring-1 ring-purple-300'
+                  : 'bg-gradient-to-r from-purple-50 via-indigo-50/80 to-violet-50/80 hover:from-purple-100 hover:to-indigo-100 text-purple-900 border-purple-200/90 shadow-2xs'
+              }`}
+              title="Icon Beautifier: Upgrade generic nodes to official AWS, GCP, Azure, K8s & DB icons"
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${openSubMenu === 'icons' ? 'text-white' : 'text-purple-600'}`} />
+              <span className="hidden sm:inline">Icon Beautify</span>
+              <ChevronDown
+                className={`w-3 h-3 transition-transform duration-150 ${
+                  openSubMenu === 'icons' ? 'rotate-180 text-white' : 'text-purple-700/60'
+                }`}
+              />
+            </button>
+
+            {openSubMenu === 'icons' && (
+              <div className="absolute left-0 mt-1.5 w-76 bg-white/95 backdrop-blur-md rounded-xl border border-slate-200 shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                  Cloud & Infra Icon Beautifier
+                </div>
+
+                {/* Instant Auto-Beautify */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenSubMenu(null);
+                    handleInstantIconBeautify();
+                  }}
+                  className="w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-purple-50/70 transition-colors group cursor-pointer"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <Sparkles className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-semibold text-slate-800 group-hover:text-purple-700">
+                      ✨ Instant Auto-Beautify
+                    </div>
+                    <div className="text-[11px] text-slate-500 truncate">
+                      Upgrade all detected AWS, K8s & DB shapes now
+                    </div>
+                  </div>
+                </button>
+
+                {/* Preview & Select Icons */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenSubMenu(null);
+                    handleOpenIconModal();
+                  }}
+                  className="w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-indigo-50/70 transition-colors group cursor-pointer border-t border-slate-100/80"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <Layers className="w-4 h-4 text-indigo-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-semibold text-slate-800 group-hover:text-indigo-700">
+                      🔍 Preview & Select Icons...
+                    </div>
+                    <div className="text-[11px] text-slate-500 truncate">
+                      Inspect matches & customize selections before applying
+                    </div>
+                  </div>
+                </button>
               </div>
             )}
           </div>
@@ -2046,6 +2208,14 @@ export const App: React.FC = () => {
         isOpen={isCostModalOpen}
         onClose={() => setIsCostModalOpen(false)}
         xml={currentXml}
+      />
+
+      {/* Icon Beautifier Preview & Select Modal */}
+      <IconBeautifierModal
+        isOpen={isIconModalOpen}
+        matches={detectedIconMatches}
+        onClose={() => setIsIconModalOpen(false)}
+        onApply={handleApplySelectedIcons}
       />
 
       {/* Feature #1: Chaos Engineering Blast Radius Floating Control */}

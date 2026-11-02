@@ -3,6 +3,7 @@ import { synthesizeDrawioXml } from './diagramSynthesizer';
 import { parseDrawioXmlToDiagram } from './diagramXmlParser';
 import { normalizeAndEnhanceDiagram } from './diagramLayoutOptimizer';
 import { beautifyDiagramXml } from './diagramBeautifier';
+import { beautifyIconsInXml } from './iconBeautifier';
 import { repairAndParseJson } from './jsonRepair';
 
 const COPILOT_SYSTEM_INSTRUCTIONS = `You are a Principal Architecture Copilot for draw.io (Vdraw).
@@ -88,6 +89,19 @@ export async function modifyDiagramWithCopilot(
       diagram: beautified.diagram,
       xml: beautified.xml,
       explanation: 'Optimized diagram alignment and eliminated node overlaps.',
+    };
+  }
+
+  // Check for Icon Beautifier intent
+  if (/(?:icon\s*beautify|apply\s*(?:aws|cloud|infra)?\s*icons?|beautify\s*icons?|replace\s*(?:with\s*)?(?:official\s*)?icons?)/i.test(trimmedInstr)) {
+    const iconResult = beautifyIconsInXml(currentXml);
+    const updatedDiagram = parseDrawioXmlToDiagram(iconResult.xml);
+    return {
+      diagram: updatedDiagram,
+      xml: iconResult.xml,
+      explanation: iconResult.updatedCount > 0
+        ? `Upgraded ${iconResult.updatedCount} component${iconResult.updatedCount > 1 ? 's' : ''} to official cloud & database stencil icons without altering arrows or layout.`
+        : 'Scanned diagram: all components already match their official cloud shapes or no new infra nodes were detected.',
     };
   }
 
