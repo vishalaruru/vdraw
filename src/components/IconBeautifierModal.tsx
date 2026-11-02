@@ -9,6 +9,8 @@ import {
   CheckSquare,
   Square,
   ArrowRight,
+  Globe,
+  Loader2,
 } from 'lucide-react';
 import { IconMatchItem } from '../services/iconBeautifier';
 
@@ -17,6 +19,8 @@ interface IconBeautifierModalProps {
   matches: IconMatchItem[];
   onClose: () => void;
   onApply: (selectedIds: string[]) => void;
+  onSearchWeb?: () => Promise<void>;
+  isSearchingWeb?: boolean;
 }
 
 export const IconBeautifierModal: React.FC<IconBeautifierModalProps> = ({
@@ -24,10 +28,13 @@ export const IconBeautifierModal: React.FC<IconBeautifierModalProps> = ({
   matches,
   onClose,
   onApply,
+  onSearchWeb,
+  isSearchingWeb = false,
 }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(matches.map((m) => m.id)));
   const [activeProvider, setActiveProvider] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [localSearching, setLocalSearching] = useState(false);
 
   // Sync selected IDs whenever matches change
   React.useEffect(() => {
@@ -82,6 +89,18 @@ export const IconBeautifierModal: React.FC<IconBeautifierModalProps> = ({
     onClose();
   };
 
+  const handleTriggerWebSearch = async () => {
+    if (!onSearchWeb || isSearchingWeb || localSearching) return;
+    try {
+      setLocalSearching(true);
+      await onSearchWeb();
+    } finally {
+      setLocalSearching(false);
+    }
+  };
+
+  const isBusySearching = isSearchingWeb || localSearching;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
@@ -95,21 +114,44 @@ export const IconBeautifierModal: React.FC<IconBeautifierModalProps> = ({
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <span>Icon Beautifier</span>
                 <span className="px-2 py-0.5 text-[11px] font-semibold bg-purple-100 text-purple-700 rounded-full">
-                  Official Cloud & Infra Icons
+                  Official Cloud & Web Logos
                 </span>
               </h3>
               <p className="text-xs text-slate-500">
-                Replace generic boxes with official AWS, GCP, Azure, Kubernetes, and database stencil icons
+                Replace generic boxes with official AWS, GCP, Azure, databases, and third-party SaaS brand logos
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onSearchWeb && (
+              <button
+                type="button"
+                disabled={isBusySearching}
+                onClick={handleTriggerWebSearch}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                title="Search web for 3rd-party vendor and software brand logos"
+              >
+                {isBusySearching ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Searching Web...</span>
+                  </>
+                ) : (
+                  <>
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Search Web Logos</span>
+                  </>
+                )}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Filter Bar & Search */}
@@ -179,8 +221,34 @@ export const IconBeautifierModal: React.FC<IconBeautifierModalProps> = ({
           {filteredMatches.length === 0 ? (
             <div className="text-center py-12 text-slate-400">
               <Layers className="w-10 h-10 mx-auto mb-2 opacity-40 text-slate-400" />
-              <div className="text-sm font-semibold text-slate-600">No components match this filter</div>
-              <div className="text-xs text-slate-400 mt-1">Try selecting 'All' or clearing your search query.</div>
+              <div className="text-sm font-semibold text-slate-600">
+                {matches.length === 0 ? 'No matched components found on canvas' : 'No components match this filter'}
+              </div>
+              <div className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                {matches.length === 0
+                  ? 'Try scanning the web for third-party vendors, SaaS tools, and brand logos.'
+                  : "Try selecting 'All' or clearing your search query."}
+              </div>
+              {onSearchWeb && matches.length === 0 && (
+                <button
+                  type="button"
+                  disabled={isBusySearching}
+                  onClick={handleTriggerWebSearch}
+                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isBusySearching ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Searching Web for Brand Logos...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Globe className="w-4 h-4" />
+                      <span>🌐 Search Web & 3rd-Party Logos</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           ) : (
             filteredMatches.map((item) => {
@@ -211,6 +279,22 @@ export const IconBeautifierModal: React.FC<IconBeautifierModalProps> = ({
                       )}
                     </button>
 
+                    {item.logoUrl ? (
+                      <img
+                        src={item.logoUrl}
+                        alt={item.matchedTechnology}
+                        className="w-7 h-7 object-contain rounded-md bg-white p-0.5 border border-slate-200 shadow-2xs shrink-0"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <span
+                        className="w-4 h-4 rounded-full inline-block shrink-0 shadow-2xs"
+                        style={{ backgroundColor: item.badgeColor }}
+                      />
+                    )}
+
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-800 truncate" title={item.originalLabel}>
@@ -218,10 +302,6 @@ export const IconBeautifierModal: React.FC<IconBeautifierModalProps> = ({
                         </span>
                         <ArrowRight className="w-3 h-3 text-slate-400 shrink-0" />
                         <span className="text-xs font-semibold text-purple-700 flex items-center gap-1">
-                          <span
-                            className="w-2 h-2 rounded-full inline-block shrink-0"
-                            style={{ backgroundColor: item.badgeColor }}
-                          />
                           <span>{item.matchedTechnology}</span>
                         </span>
                       </div>
@@ -234,12 +314,19 @@ export const IconBeautifierModal: React.FC<IconBeautifierModalProps> = ({
                   </div>
 
                   <div className="shrink-0 flex items-center gap-2">
-                    <span
-                      className="px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-2xs"
-                      style={{ backgroundColor: item.badgeColor }}
-                    >
-                      {item.provider}
-                    </span>
+                    {item.source === 'web' ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 flex items-center gap-1 shadow-2xs">
+                        <Globe className="w-2.5 h-2.5" />
+                        <span>Web</span>
+                      </span>
+                    ) : (
+                      <span
+                        className="px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-2xs"
+                        style={{ backgroundColor: item.badgeColor }}
+                      >
+                        {item.provider}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -277,4 +364,5 @@ export const IconBeautifierModal: React.FC<IconBeautifierModalProps> = ({
     </div>
   );
 };
+
 

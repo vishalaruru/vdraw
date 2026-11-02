@@ -59,7 +59,7 @@ import { SlaLatencyModal } from './components/SlaLatencyModal';
 import { IconBeautifierModal } from './components/IconBeautifierModal';
 import { clearDiagramCache } from './services/diagramCache';
 import { beautifyDiagramXml, LayoutOptions } from './services/diagramBeautifier';
-import { detectIconMatches, beautifyIconsInXml, IconMatchItem } from './services/iconBeautifier';
+import { detectIconMatches, beautifyIconsInXml, searchWebIcons, IconMatchItem } from './services/iconBeautifier';
 import { saveDiagramVersion, getAllVersions } from './services/versionHistory';
 import { auditArchitectureDiagram, ArchitectureAuditResult, SecurityFinding, extractTopologyFromXml } from './services/architectureAuditor';
 import { generateTechSpecDocument } from './services/docGenerator';
@@ -162,6 +162,7 @@ export const App: React.FC = () => {
   const [isExportingHtml, setIsExportingHtml] = useState(false);
   // Icon Beautifier Feature
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [isSearchingWebIcons, setIsSearchingWebIcons] = useState(false);
   const [detectedIconMatches, setDetectedIconMatches] = useState<IconMatchItem[]>([]);
   const [openSubMenu, setOpenSubMenu] = useState<'ai' | 'align' | 'icons' | 'security' | 'iac' | 'misc' | 'export' | null>(null);
   const subMenuRef = useRef<HTMLDivElement>(null);
@@ -370,16 +371,35 @@ export const App: React.FC = () => {
       }
 
       const matches = detectIconMatches(xmlToProcess);
-      if (matches.length === 0) {
-        showToast('No cloud/infra components detected on canvas');
-        return;
-      }
-
       setDetectedIconMatches(matches);
       setIsIconModalOpen(true);
     } catch (err) {
       console.error(err);
       showToast('Error scanning components for icons');
+    }
+  };
+
+  const handleSearchWebIcons = async () => {
+    try {
+      setIsSearchingWebIcons(true);
+      const xmlToProcess = (await editorRef.current?.getCurrentXml()) || currentXml;
+      const webMatches = await searchWebIcons(xmlToProcess, detectedIconMatches);
+      if (webMatches.length === 0) {
+        showToast('No additional 3rd-party or SaaS brand logos detected');
+        return;
+      }
+
+      setDetectedIconMatches((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id));
+        const newItems = webMatches.filter((m) => !existingIds.has(m.id));
+        return [...prev, ...newItems];
+      });
+      showToast(`Discovered ${webMatches.length} 3rd-party vendor / web icons!`);
+    } catch (err) {
+      console.error(err);
+      showToast('Error searching web for brand logos');
+    } finally {
+      setIsSearchingWebIcons(false);
     }
   };
 
@@ -390,7 +410,7 @@ export const App: React.FC = () => {
       saveDiagramVersion(activeTabId, xmlToProcess, 'Before Icon Beautify');
       setVersions(getAllVersions());
 
-      const result = beautifyIconsInXml(xmlToProcess, selectedIds);
+      const result = beautifyIconsInXml(xmlToProcess, selectedIds, detectedIconMatches);
       editorRef.current?.loadXml(result.xml);
       setCurrentXml(result.xml);
       showToast(`Applied official icons to ${result.updatedCount} component${result.updatedCount > 1 ? 's' : ''}!`);
@@ -2216,6 +2236,8 @@ export const App: React.FC = () => {
         matches={detectedIconMatches}
         onClose={() => setIsIconModalOpen(false)}
         onApply={handleApplySelectedIcons}
+        onSearchWeb={handleSearchWebIcons}
+        isSearchingWeb={isSearchingWebIcons}
       />
 
       {/* Feature #1: Chaos Engineering Blast Radius Floating Control */}
