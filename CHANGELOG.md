@@ -62,3 +62,4 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Layer 2 Shape Traversal**: Correctly traverses multi-layer Draw.io diagrams to extract all shapes and connectors.
 - **Sub-Second Native Metadata Extraction**: Eliminates vision buffering timeouts with 12s fallback guards and model escalation (`gemini-flash-lite-latest` ➔ `gemini-3-flash-preview`).
 - **Auth Hardening**: Enforces `.env` API key precedence and automatically purges revoked legacy keys from `localStorage`.
+
