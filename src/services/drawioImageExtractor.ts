@@ -71,3 +71,4 @@ export async function tryExtractEmbeddedDrawioXml(file: File): Promise<string | 
 
   return null;
 }
+

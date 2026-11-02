@@ -52,54 +52,22 @@ export interface ParsedTopology {
   edges: ParsedTopologyEdge[];
 }
 
+import { parseDrawioXmlToDiagram } from './diagramXmlParser';
+
 export function extractTopologyFromXml(xml: string): ParsedTopology {
-  const nodes: ParsedTopologyNode[] = [];
-  const edges: ParsedTopologyEdge[] = [];
-
-  const cellRegex = /<mxCell\b([^>]*\bvertex="1"[^>]*)>/g;
-  let match;
-  while ((match = cellRegex.exec(xml)) !== null) {
-    const attrs = match[1];
-    const idMatch = /\bid="([^"]+)"/.exec(attrs);
-    if (!idMatch || idMatch[1] === '0' || idMatch[1] === '1') continue;
-
-    const parentMatch = /\bparent="([^"]+)"/.exec(attrs);
-    // Ignore inner child elements (e.g. columns inside swimlane/table) when parent is another node
-    if (parentMatch && parentMatch[1] !== '1' && parentMatch[1] !== '0') {
-      continue;
-    }
-
-    const valueMatch = /\bvalue="([^"]*)"/.exec(attrs);
-    const rawVal = valueMatch ? valueMatch[1] : '';
-
-    const cleanLabel = rawVal
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&#xa;/g, ' ')
-      .replace(/<[^>]*>/g, '')
-      .trim();
-
-    if (cleanLabel) {
-      nodes.push({
-        id: idMatch[1],
-        label: cleanLabel,
-        type: classifyNodeType(cleanLabel),
-      });
-    }
-  }
-
-  const edgeRegex =
-    /<mxCell[^>]*\bid="([^"]+)"[^>]*(?:\bvalue="([^"]*)")?[^>]*\bedge="1"[^>]*\bsource="([^"]+)"[^>]*\btarget="([^"]+)"/g;
-  while ((match = edgeRegex.exec(xml)) !== null) {
-    edges.push({
-      source: match[3],
-      target: match[4],
-      label: (match[2] || '').replace(/<[^>]*>/g, '').trim(),
-    });
-  }
-
-  return { nodes, edges };
+  const parsed = parseDrawioXmlToDiagram(xml);
+  return {
+    nodes: parsed.nodes.map((n) => ({
+      id: n.id,
+      label: n.label,
+      type: classifyNodeType(n.label),
+    })),
+    edges: parsed.edges.map((e) => ({
+      source: e.source,
+      target: e.target,
+      label: e.label || '',
+    })),
+  };
 }
 
 function classifyNodeType(label: string): string {
