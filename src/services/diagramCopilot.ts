@@ -2,6 +2,7 @@ import { ExtractedDiagram, ThemePreset, DiagramNode, DiagramEdge } from '../type
 import { synthesizeDrawioXml } from './diagramSynthesizer';
 import { parseDrawioXmlToDiagram } from './diagramXmlParser';
 import { normalizeAndEnhanceDiagram } from './diagramLayoutOptimizer';
+import { beautifyDiagramXml } from './diagramBeautifier';
 
 const COPILOT_SYSTEM_INSTRUCTIONS = `You are a Principal Architecture Copilot for draw.io (Vdraw).
 You receive the CURRENT DIAGRAM state as a structured list of components (nodes) and connections (edges), plus a natural language user instruction.
@@ -55,11 +56,55 @@ export async function modifyDiagramWithCopilot(
   apiKey?: string
 ): Promise<{ diagram: ExtractedDiagram; xml: string; explanation: string }> {
   const existingDiagram = parseDrawioXmlToDiagram(currentXml);
+  const trimmedInstr = userInstruction.trim();
+
+  // Check for immediate local intent shortcuts (e.g. Align, Distribute, Beautify)
+  const alignMatch = /align\s+(left|center|right|top|middle|bottom)/i.exec(trimmedInstr);
+  if (alignMatch) {
+    const alignMode = `align-${alignMatch[1].toLowerCase()}` as any;
+    const beautified = await beautifyDiagramXml(currentXml, { mode: alignMode });
+    return {
+      diagram: beautified.diagram,
+      xml: beautified.xml,
+      explanation: `Aligned all components to ${alignMatch[1].toLowerCase()}.`,
+    };
+  }
+
+  const distributeMatch = /distribute\s+(horizontally|vertically)/i.exec(trimmedInstr);
+  if (distributeMatch) {
+    const distMode = `distribute-${distributeMatch[1].toLowerCase() === 'horizontally' ? 'horizontal' : 'vertical'}` as any;
+    const beautified = await beautifyDiagramXml(currentXml, { mode: distMode });
+    return {
+      diagram: beautified.diagram,
+      xml: beautified.xml,
+      explanation: `Equidistantly distributed shapes ${distributeMatch[1].toLowerCase()}.`,
+    };
+  }
+
+  if (/^(?:auto-?align|beautify|clean\s+layout)$/i.test(trimmedInstr)) {
+    const beautified = await beautifyDiagramXml(currentXml, { mode: 'smart-beautify' });
+    return {
+      diagram: beautified.diagram,
+      xml: beautified.xml,
+      explanation: 'Optimized diagram alignment and eliminated node overlaps.',
+    };
+  }
+
+  // Check deterministic local intent first for fast & 100% reliable edits
+  const localResult = applyLocalCopilotEdit(existingDiagram, trimmedInstr);
+  if (localResult.handled) {
+    const localXml = synthesizeDrawioXml(localResult.diagram, theme);
+    return {
+      diagram: localResult.diagram,
+      xml: localXml,
+      explanation: localResult.explanation,
+    };
+  }
 
   const envKey = (import.meta as unknown as { env?: { VITE_GEMINI_API_KEY?: string } })?.env?.VITE_GEMINI_API_KEY || '';
-  const storedKey = (typeof localStorage !== "undefined" ? localStorage.getItem("GEMINI_API_KEY") : "") || "";
-  const cleanStored = storedKey.includes("AIzaSyBCdBG4Cu") ? "" : storedKey;
-  const cleanPassed = (apiKey && !apiKey.includes("AIzaSyBCdBG4Cu")) ? apiKey : "";
+  const storedKey = (typeof localStorage !== 'undefined' ? localStorage.getItem('GEMINI_API_KEY') : '') || '';
+  const cleanStored = storedKey.includes('AIzaSyBCdBG4Cu') ? '' : storedKey;
+  const cleanPassed = apiKey && !apiKey.includes('AIzaSyBCdBG4Cu') ? apiKey : '';
   const keyToUse = cleanPassed || envKey || cleanStored;
 
   const candidateModels = [
@@ -137,7 +182,7 @@ export async function modifyDiagramWithCopilot(
       const cleanedJson = extractCleanJson(raw);
       const parsed: ExtractedDiagram & { explanation?: string } = JSON.parse(cleanedJson);
 
-      // Sanity check: if user asked to add, verify no existing nodes were dropped
+      // Verify no existing nodes were accidentally dropped when adding
       const lowerInstr = userInstruction.toLowerCase();
       if ((lowerInstr.includes('add') || lowerInstr.includes('insert')) && !lowerInstr.includes('remove') && !lowerInstr.includes('delete')) {
         const newLabels = new Set(parsed.nodes.map((n) => n.label.toLowerCase()));
@@ -166,16 +211,15 @@ export async function modifyDiagramWithCopilot(
   }
 
   if (lastError) {
-    console.warn('Copilot AI models error, using deterministic local engine:', lastError);
+    console.warn('Copilot AI models error, using fallback:', lastError);
   }
 
-  // Deterministic local engine: handles Rename, Move, Remove, Replace, Connect, Add
-  const fallbackResult = applyLocalCopilotEdit(existingDiagram, userInstruction);
-  const fallbackXml = synthesizeDrawioXml(fallbackResult.diagram, theme);
+  // Fallback explanation if instruction was unrecognized
+  const fallbackXml = synthesizeDrawioXml(localResult.diagram, theme);
   return {
-    diagram: fallbackResult.diagram,
+    diagram: localResult.diagram,
     xml: fallbackXml,
-    explanation: fallbackResult.explanation,
+    explanation: localResult.explanation,
   };
 }
 
@@ -195,19 +239,25 @@ function extractCleanJson(raw: string): string {
   return cleaned;
 }
 
+interface LocalEditResult {
+  diagram: ExtractedDiagram;
+  explanation: string;
+  handled: boolean;
+}
+
 /**
  * Deterministic local execution engine supporting:
- * - Rename / Change Label: "rename [X] to [Y]"
- * - Move: "move [X] up/down/left/right", "move [X] below [Y]"
+ * - Rename / Change Label: "rename [X] to [Y]", "relabel [X] as [Y]", "change name of [X] to [Y]"
+ * - Move: "move [X] up/down/left/right [by N px]", "move [X] below/above/after/before [Y]"
  * - Remove / Delete: "remove [X]", "delete [X]"
- * - Replace: "replace [X] with [Y]"
- * - Connect: "connect [A] to [B]"
- * - Add / Insert: "add [X] below [Y]"
+ * - Replace: "replace [X] with [Y]", "swap [X] with [Y]"
+ * - Connect: "connect [A] to [B] [via protocol]"
+ * - Add / Insert: "add [X] below/above/after/before [Y]", "add [X] between [A] and [B]"
  */
 function applyLocalCopilotEdit(
   diagram: ExtractedDiagram,
   instruction: string
-): { diagram: ExtractedDiagram; explanation: string } {
+): LocalEditResult {
   const nodes: DiagramNode[] = diagram.nodes.map((n) => ({ ...n }));
   const edges: DiagramEdge[] = diagram.edges.map((e) => ({ ...e }));
   const instr = instruction.trim();
@@ -215,6 +265,7 @@ function applyLocalCopilotEdit(
   // Helper: Fuzzy find node by label
   const findNode = (name: string): DiagramNode | undefined => {
     const clean = name.toLowerCase().replace(/['"]/g, '').trim();
+    if (!clean) return undefined;
     return (
       nodes.find((n) => n.label.toLowerCase() === clean) ||
       nodes.find((n) => n.label.toLowerCase().includes(clean)) ||
@@ -222,8 +273,45 @@ function applyLocalCopilotEdit(
     );
   };
 
-  // 1. INTENT: RENAME (e.g. "Rename Pre MEL Parser to Ingest Parser", "Change name of X to Y")
-  const renameMatch = /(?:rename|relabel|change\s+name\s+of)\s+(?:node\s+)?['"]?(.+?)['"]?\s+to\s+['"]?(.+?)['"]?$/i.exec(instr);
+  // 1. Partial/Underspecified Command Guards with Helpful Suggestions
+  if (/^(?:rename|relabel)\s*(?:node|the\s+node)?$/i.test(instr)) {
+    return {
+      diagram,
+      handled: true,
+      explanation: "Please specify the node and new name (e.g. 'Rename Pre MEL Parser to Ingest Parser').",
+    };
+  }
+  if (/^(?:move|shift)\s*(?:node|the\s+node)?$/i.test(instr)) {
+    return {
+      diagram,
+      handled: true,
+      explanation: "Please specify which node to move (e.g. 'Move Ingest below Producers' or 'Move DCMS down by 80px').",
+    };
+  }
+  if (/^(?:delete|remove)\s*(?:node|the\s+node)?$/i.test(instr)) {
+    return {
+      diagram,
+      handled: true,
+      explanation: "Please specify which node to remove (e.g. 'Delete Redis' or 'Remove legacy parser').",
+    };
+  }
+  if (/^(?:connect|wire|link)\s*(?:node|the\s+node)?$/i.test(instr)) {
+    return {
+      diagram,
+      handled: true,
+      explanation: "Please specify source and target (e.g. 'Connect Media Availability API to FIBA Mapper API').",
+    };
+  }
+  if (/^(?:add|insert)\s*(?:node|the\s+node)?$/i.test(instr)) {
+    return {
+      diagram,
+      handled: true,
+      explanation: "Please specify the new node and position (e.g. 'Add Config below MFL Service').",
+    };
+  }
+
+  // 2. INTENT: RENAME (e.g. "Rename Pre MEL Parser to Ingest Parser", "Change name of X to Y", "Relabel X as Y")
+  const renameMatch = /(?:rename|relabel|change(?:\s+the)?\s+name\s+of|change|update\s+label\s+of)\s+(?:node\s+|the\s+node\s+)?['"]?(.+?)['"]?\s+(?:to|as|into)\s+['"]?(.+?)['"]?$/i.exec(instr);
   if (renameMatch) {
     const targetName = renameMatch[1].trim();
     const newName = renameMatch[2].trim();
@@ -234,13 +322,14 @@ function applyLocalCopilotEdit(
       node.label = newName;
       return {
         diagram: { ...diagram, nodes, edges },
+        handled: true,
         explanation: `Renamed '${oldName}' to '${newName}'.`,
       };
     }
   }
 
-  // 2. INTENT: MOVE (e.g. "Move DCMS down", "Move X up by 80px", "Move Ingest below Producers")
-  const moveRelativeMatch = /move\s+(?:node\s+)?['"]?(.+?)['"]?\s+(below|above|after|before)\s+['"]?(.+?)['"]?$/i.exec(instr);
+  // 3. INTENT: MOVE RELATIVE (e.g. "Move Ingest below Producers", "Move X above Y", "Move X after Y")
+  const moveRelativeMatch = /(?:move|shift|relocate)\s+(?:node\s+|the\s+node\s+)?['"]?(.+?)['"]?\s+(below|above|after|before|to\s+the\s+right\s+of|to\s+the\s+left\s+of)\s+['"]?(.+?)['"]?$/i.exec(instr);
   if (moveRelativeMatch) {
     const targetName = moveRelativeMatch[1].trim();
     const position = moveRelativeMatch[2].toLowerCase();
@@ -250,27 +339,29 @@ function applyLocalCopilotEdit(
     const anchor = findNode(anchorName);
 
     if (node && anchor) {
-      if (position === 'below') {
+      if (position.includes('below')) {
         node.x = anchor.x;
-        node.y = anchor.y + anchor.height + 60;
-      } else if (position === 'above') {
+        node.y = anchor.y + anchor.height + 50;
+      } else if (position.includes('above')) {
         node.x = anchor.x;
-        node.y = Math.max(20, anchor.y - node.height - 60);
-      } else if (position === 'after') {
+        node.y = Math.max(20, anchor.y - node.height - 50);
+      } else if (position.includes('after') || position.includes('right')) {
         node.x = anchor.x + anchor.width + 80;
         node.y = anchor.y;
-      } else if (position === 'before') {
+      } else if (position.includes('before') || position.includes('left')) {
         node.x = Math.max(20, anchor.x - node.width - 80);
         node.y = anchor.y;
       }
       return {
         diagram: { ...diagram, nodes, edges },
+        handled: true,
         explanation: `Moved '${node.label}' ${position} '${anchor.label}'.`,
       };
     }
   }
 
-  const moveDirectionMatch = /move\s+(?:node\s+)?['"]?(.+?)['"]?\s+(up|down|left|right)(?:\s+by\s+(\d+)(?:px)?)?$/i.exec(instr);
+  // 4. INTENT: MOVE DIRECTIONAL (e.g. "Move DCMS down", "Move X up by 80px")
+  const moveDirectionMatch = /(?:move|shift)\s+(?:node\s+|the\s+node\s+)?['"]?(.+?)['"]?\s+(up|down|left|right)(?:\s+by\s+(\d+)(?:px)?)?$/i.exec(instr);
   if (moveDirectionMatch) {
     const targetName = moveDirectionMatch[1].trim();
     const direction = moveDirectionMatch[2].toLowerCase();
@@ -285,13 +376,14 @@ function applyLocalCopilotEdit(
 
       return {
         diagram: { ...diagram, nodes, edges },
+        handled: true,
         explanation: `Moved '${node.label}' ${direction} by ${amount}px.`,
       };
     }
   }
 
-  // 3. INTENT: REMOVE / DELETE (e.g. "Remove legacy parser", "Delete Redis")
-  const removeMatch = /(?:remove|delete|drop|cut)\s+(?:node\s+)?['"]?(.+?)['"]?$/i.exec(instr);
+  // 5. INTENT: REMOVE / DELETE (e.g. "Remove legacy parser", "Delete Redis")
+  const removeMatch = /(?:remove|delete|drop|cut)\s+(?:node\s+|the\s+node\s+)?['"]?(.+?)['"]?$/i.exec(instr);
   if (removeMatch) {
     const targetName = removeMatch[1].trim();
     const node = findNode(targetName);
@@ -301,13 +393,14 @@ function applyLocalCopilotEdit(
       const remainingEdges = edges.filter((e) => e.source !== node.id && e.target !== node.id);
       return {
         diagram: { ...diagram, nodes: remainingNodes, edges: remainingEdges },
+        handled: true,
         explanation: `Removed component '${node.label}' and its connections.`,
       };
     }
   }
 
-  // 4. INTENT: REPLACE (e.g. "Replace MySQL with PostgreSQL")
-  const replaceMatch = /replace\s+(?:node\s+)?['"]?(.+?)['"]?\s+with\s+['"]?(.+?)['"]?$/i.exec(instr);
+  // 6. INTENT: REPLACE (e.g. "Replace MySQL with PostgreSQL")
+  const replaceMatch = /(?:replace|swap)\s+(?:node\s+|the\s+node\s+)?['"]?(.+?)['"]?\s+with\s+['"]?(.+?)['"]?$/i.exec(instr);
   if (replaceMatch) {
     const oldName = replaceMatch[1].trim();
     const newName = replaceMatch[2].trim();
@@ -318,13 +411,14 @@ function applyLocalCopilotEdit(
       node.label = newName;
       return {
         diagram: { ...diagram, nodes, edges },
+        handled: true,
         explanation: `Replaced '${previous}' with '${newName}'.`,
       };
     }
   }
 
-  // 5. INTENT: CONNECT (e.g. "Connect DCMS to Dots Stream", "Wire A to B via gRPC")
-  const connectMatch = /(?:connect|wire|link)\s+(?:node\s+)?['"]?(.+?)['"]?\s+to\s+['"]?(.+?)['"]?(?:\s+via\s+['"]?(.+?)['"]?)?$/i.exec(instr);
+  // 7. INTENT: CONNECT (e.g. "Connect DCMS to Dots Stream", "Wire A to B via gRPC")
+  const connectMatch = /(?:connect|wire|link)\s+(?:node\s+|the\s+node\s+)?['"]?(.+?)['"]?\s+to\s+['"]?(.+?)['"]?(?:\s+(?:via|with\s+label)\s+['"]?(.+?)['"]?)?$/i.exec(instr);
   if (connectMatch) {
     const sName = connectMatch[1].trim();
     const tName = connectMatch[2].trim();
@@ -344,13 +438,14 @@ function applyLocalCopilotEdit(
 
       return {
         diagram: { ...diagram, nodes, edges },
+        handled: true,
         explanation: `Connected '${sNode.label}' ➔ '${tNode.label}' via "${edgeLabel}".`,
       };
     }
   }
 
-  // 6. INTENT: ADD / INSERT (e.g. "Add Redis cache", "Insert Config below MFL")
-  const addMatch = /(?:add|insert|create)\s+(?:a\s+|an\s+)?['"]?(.+?)['"]?(?:\s+(below|above|after|before|to)\s+['"]?(.+?)['"]?)?$/i.exec(instr);
+  // 8. INTENT: ADD / INSERT (e.g. "Add Redis cache", "Insert Config below MFL")
+  const addMatch = /(?:add|insert|create)\s+(?:a\s+|an\s+|node\s+)?['"]?(.+?)['"]?(?:\s+(below|above|after|before|to|in\s+front\s+of)\s+['"]?(.+?)['"]?)?$/i.exec(instr);
   if (addMatch) {
     const newNodeName = addMatch[1].trim();
     const position = addMatch[2]?.toLowerCase();
@@ -365,15 +460,15 @@ function applyLocalCopilotEdit(
     if (anchorNode) {
       if (position === 'below') {
         x = anchorNode.x;
-        y = anchorNode.y + anchorNode.height + 60;
+        y = anchorNode.y + anchorNode.height + 50;
       } else if (position === 'above') {
         x = anchorNode.x;
-        y = Math.max(20, anchorNode.y - 120);
-      } else if (position === 'before') {
+        y = Math.max(20, anchorNode.y - 110);
+      } else if (position === 'before' || position === 'in front of') {
         x = Math.max(20, anchorNode.x - 220);
         y = anchorNode.y;
       } else {
-        // after / default
+        // after / to / default
         x = anchorNode.x + anchorNode.width + 80;
         y = anchorNode.y;
       }
@@ -405,12 +500,14 @@ function applyLocalCopilotEdit(
 
     return {
       diagram: { ...diagram, nodes, edges },
+      handled: true,
       explanation: `Added new component '${newNodeName}' without altering existing nodes.`,
     };
   }
 
   return {
     diagram,
-    explanation: `Could not interpret instruction "${instruction}". Try: "Rename [A] to [B]", "Move [A] up/down", "Connect [A] to [B]", "Delete [A]", or "Add [A]".`,
+    handled: false,
+    explanation: `Could not interpret instruction "${instruction}". Try: "Rename [A] to [B]", "Move [A] down", "Connect [A] to [B]", "Delete [A]", "Align left", or "Distribute horizontally".`,
   };
 }

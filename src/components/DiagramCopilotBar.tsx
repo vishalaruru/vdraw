@@ -54,10 +54,12 @@ export const DiagramCopilotBar: React.FC<DiagramCopilotBarProps> = ({
   };
 
   const quickCommands = [
+    'Rename Pre MEL Parser to Ingest Parser',
+    'Move Ingest below Producers',
     'Add Config below MFL Service',
-    'Add Redis cache before PostgreSQL DB',
-    'Put Cloudflare WAF in front of Web Client',
     'Connect Media Availability API to FIBA Mapper API',
+    'Distribute horizontally',
+    'Auto-align & beautify',
   ];
 
   return (

@@ -29,6 +29,13 @@ import {
   FileCode,
   Timer,
   Globe,
+  LayoutGrid,
+  MoveHorizontal,
+  MoveVertical,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  ArrowRight,
 } from 'lucide-react';
 import { DrawioEditor, DrawioEditorHandle } from './components/DrawioEditor';
 import { ImageToDiagramModal } from './components/ImageToDiagramModal';
@@ -50,7 +57,7 @@ import { PresentationModeOverlay } from './components/PresentationModeOverlay';
 import { CommandPaletteModal, CommandItem } from './components/CommandPaletteModal';
 import { SlaLatencyModal } from './components/SlaLatencyModal';
 import { clearDiagramCache } from './services/diagramCache';
-import { beautifyDiagramXml } from './services/diagramBeautifier';
+import { beautifyDiagramXml, LayoutOptions } from './services/diagramBeautifier';
 import { saveDiagramVersion, getAllVersions } from './services/versionHistory';
 import { auditArchitectureDiagram, ArchitectureAuditResult, SecurityFinding, extractTopologyFromXml } from './services/architectureAuditor';
 import { generateTechSpecDocument } from './services/docGenerator';
@@ -289,9 +296,12 @@ export const App: React.FC = () => {
   };
 
   // AI Beautifier & Auto-Layout (#2)
-  const handleBeautifyCanvas = async () => {
+  const handleBeautifyCanvas = async (
+    mode: LayoutOptions['mode'] = 'smart-beautify',
+    label = 'Auto-Align & Beautify'
+  ) => {
     try {
-      const xmlToProcess = await editorRef.current?.getCurrentXml() || currentXml;
+      const xmlToProcess = (await editorRef.current?.getCurrentXml()) || currentXml;
       if (!xmlToProcess || xmlToProcess.length < 200) {
         showToast('Canvas is empty');
         return;
@@ -300,19 +310,19 @@ export const App: React.FC = () => {
       pushUndoState(xmlToProcess);
 
       setIsBeautifying(true);
-      showToast('Optimizing diagram alignment & arrow routing...');
+      showToast(`Applying ${label}...`);
 
-      // Save version snapshot before beautify
-      saveDiagramVersion(activeTabId, xmlToProcess, 'Before Auto-Align');
+      // Save version snapshot before layout change
+      saveDiagramVersion(activeTabId, xmlToProcess, `Before ${label}`);
       setVersions(getAllVersions());
 
-      const { xml: cleanedXml } = await beautifyDiagramXml(xmlToProcess);
+      const { xml: cleanedXml } = await beautifyDiagramXml(xmlToProcess, { mode });
       editorRef.current?.loadXml(cleanedXml);
       setCurrentXml(cleanedXml);
-      showToast('Diagram layout aligned & routes cleaned!');
+      showToast(`${label} applied cleanly!`);
     } catch (err) {
       console.error(err);
-      showToast(err instanceof Error ? err.message : 'Beautify failed');
+      showToast(err instanceof Error ? err.message : 'Layout failed');
     } finally {
       setIsBeautifying(false);
     }
@@ -1174,18 +1184,18 @@ export const App: React.FC = () => {
             </button>
 
             {openSubMenu === 'align' && (
-              <div className="absolute right-0 mt-1.5 w-68 bg-white/95 backdrop-blur-md rounded-xl border border-slate-200 shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <div className="absolute right-0 mt-1.5 w-76 bg-white/95 backdrop-blur-md rounded-xl border border-slate-200 shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
                 <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                  Canvas Layout & Traffic
+                  Draw.io Arrange, Align & Layout
                 </div>
 
-                {/* 1. Auto-Align */}
+                {/* 1. Auto-Align & Deconflict */}
                 <button
                   type="button"
                   disabled={isBeautifying}
                   onClick={() => {
                     setOpenSubMenu(null);
-                    handleBeautifyCanvas();
+                    handleBeautifyCanvas('smart-beautify', 'Auto-Align & Beautify');
                   }}
                   className="w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-emerald-50/70 transition-colors group cursor-pointer disabled:opacity-50"
                 >
@@ -1197,43 +1207,201 @@ export const App: React.FC = () => {
                       {isBeautifying ? 'Aligning Layout...' : 'Auto-Align & Beautify'}
                     </div>
                     <div className="text-[11px] text-slate-500 truncate">
-                      Straighten connectors & balance grid spacing
+                      Deconflict overlaps, balance columns & snap grid
                     </div>
                   </div>
                 </button>
 
-                {/* 2. Simulate Traffic Flow */}
+                {/* 2. Hierarchical Flow (Left-to-Right) */}
                 <button
                   type="button"
+                  disabled={isBeautifying}
                   onClick={() => {
                     setOpenSubMenu(null);
-                    handleToggleTrafficSimulation();
+                    handleBeautifyCanvas('flow-left-to-right', 'Left-to-Right Flow');
                   }}
-                  className={`w-full text-left px-3 py-2 flex items-center gap-2.5 transition-colors group cursor-pointer ${
-                    isSimulatingTraffic ? 'bg-emerald-50 hover:bg-emerald-100/70' : 'hover:bg-emerald-50/70'
-                  }`}
+                  className="w-full text-left px-3 py-1.5 flex items-center gap-2.5 hover:bg-emerald-50/70 transition-colors group cursor-pointer disabled:opacity-50"
                 >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform ${
-                    isSimulatingTraffic ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                  }`}>
-                    <Activity className={`w-4 h-4 ${isSimulatingTraffic ? 'text-white animate-pulse' : 'text-emerald-600'}`} />
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <ArrowRight className="w-4 h-4 text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className={`text-[12px] font-semibold ${isSimulatingTraffic ? 'text-emerald-700' : 'text-slate-800 group-hover:text-emerald-700'}`}>
-                        Simulate Traffic Flow
-                      </span>
-                      {isSimulatingTraffic && (
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-emerald-600 text-white">
-                          ACTIVE
-                        </span>
-                      )}
+                    <div className="text-[12px] font-semibold text-slate-800 group-hover:text-blue-700">
+                      Horizontal Flow (Left ➔ Right)
                     </div>
                     <div className="text-[11px] text-slate-500 truncate">
-                      Animate live packet requests along connections
+                      Sugiyama DAG layered columns (Draw.io Layout)
                     </div>
                   </div>
                 </button>
+
+                {/* 3. Hierarchical Flow (Top-to-Bottom) */}
+                <button
+                  type="button"
+                  disabled={isBeautifying}
+                  onClick={() => {
+                    setOpenSubMenu(null);
+                    handleBeautifyCanvas('flow-top-to-bottom', 'Top-to-Bottom Flow');
+                  }}
+                  className="w-full text-left px-3 py-1.5 flex items-center gap-2.5 hover:bg-emerald-50/70 transition-colors group cursor-pointer disabled:opacity-50"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <LayoutGrid className="w-4 h-4 text-indigo-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-semibold text-slate-800 group-hover:text-indigo-700">
+                      Vertical Flow (Top ➔ Bottom)
+                    </div>
+                    <div className="text-[11px] text-slate-500 truncate">
+                      Sequential top-down hierarchical ranks
+                    </div>
+                  </div>
+                </button>
+
+                <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-t border-slate-100 mt-1">
+                  Equidistant Spacing (Distribute)
+                </div>
+
+                {/* 4. Distribute Horizontally */}
+                <button
+                  type="button"
+                  disabled={isBeautifying}
+                  onClick={() => {
+                    setOpenSubMenu(null);
+                    handleBeautifyCanvas('distribute-horizontal', 'Distribute Horizontally');
+                  }}
+                  className="w-full text-left px-3 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 transition-colors group cursor-pointer disabled:opacity-50"
+                >
+                  <MoveHorizontal className="w-4 h-4 text-slate-500 group-hover:text-slate-800 ml-1.5" />
+                  <span className="text-[12px] font-medium text-slate-700 group-hover:text-slate-900">
+                    Distribute Horizontally
+                  </span>
+                </button>
+
+                {/* 5. Distribute Vertically */}
+                <button
+                  type="button"
+                  disabled={isBeautifying}
+                  onClick={() => {
+                    setOpenSubMenu(null);
+                    handleBeautifyCanvas('distribute-vertical', 'Distribute Vertically');
+                  }}
+                  className="w-full text-left px-3 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 transition-colors group cursor-pointer disabled:opacity-50"
+                >
+                  <MoveVertical className="w-4 h-4 text-slate-500 group-hover:text-slate-800 ml-1.5" />
+                  <span className="text-[12px] font-medium text-slate-700 group-hover:text-slate-900">
+                    Distribute Vertically
+                  </span>
+                </button>
+
+                <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-t border-slate-100 mt-1">
+                  Quick Align
+                </div>
+
+                {/* 6. Align Rows */}
+                <div className="px-3 py-1 grid grid-cols-3 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenSubMenu(null);
+                      handleBeautifyCanvas('align-left', 'Align Left');
+                    }}
+                    className="px-2 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-[11px] font-medium text-slate-700 flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <AlignLeft className="w-3 h-3" />
+                    Left
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenSubMenu(null);
+                      handleBeautifyCanvas('align-center', 'Align Center');
+                    }}
+                    className="px-2 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-[11px] font-medium text-slate-700 flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <AlignCenter className="w-3 h-3" />
+                    Center
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenSubMenu(null);
+                      handleBeautifyCanvas('align-right', 'Align Right');
+                    }}
+                    className="px-2 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-[11px] font-medium text-slate-700 flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <AlignRight className="w-3 h-3" />
+                    Right
+                  </button>
+                </div>
+
+                <div className="px-3 py-1 grid grid-cols-3 gap-1 pb-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenSubMenu(null);
+                      handleBeautifyCanvas('align-top', 'Align Top');
+                    }}
+                    className="px-2 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-[11px] font-medium text-slate-700 flex items-center justify-center cursor-pointer"
+                  >
+                    Top
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenSubMenu(null);
+                      handleBeautifyCanvas('align-middle', 'Align Middle');
+                    }}
+                    className="px-2 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-[11px] font-medium text-slate-700 flex items-center justify-center cursor-pointer"
+                  >
+                    Middle
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenSubMenu(null);
+                      handleBeautifyCanvas('align-bottom', 'Align Bottom');
+                    }}
+                    className="px-2 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-[11px] font-medium text-slate-700 flex items-center justify-center cursor-pointer"
+                  >
+                    Bottom
+                  </button>
+                </div>
+
+                <div className="border-t border-slate-100 pt-1">
+                  {/* Traffic Simulation */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenSubMenu(null);
+                      handleToggleTrafficSimulation();
+                    }}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 transition-colors group cursor-pointer ${
+                      isSimulatingTraffic ? 'bg-emerald-50 hover:bg-emerald-100/70' : 'hover:bg-emerald-50/70'
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform ${
+                      isSimulatingTraffic ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                    }`}>
+                      <Activity className={`w-4 h-4 ${isSimulatingTraffic ? 'text-white animate-pulse' : 'text-emerald-600'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-[12px] font-semibold ${isSimulatingTraffic ? 'text-emerald-700' : 'text-slate-800 group-hover:text-emerald-700'}`}>
+                          Simulate Traffic Flow
+                        </span>
+                        {isSimulatingTraffic && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-emerald-600 text-white">
+                            ACTIVE
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-500 truncate">
+                        Animate live packet requests along connections
+                      </div>
+                    </div>
+                  </button>
+                </div>
               </div>
             )}
           </div>

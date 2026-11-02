@@ -421,10 +421,28 @@ DO NOT output markdown backticks around the JSON. Output only raw JSON.`;
 
       const parsed = JSON.parse(cleaned);
       if (parsed.reconstructionPrompt) {
+        // Completeness Verification: Ensure AI model didn't summarize away components
+        let mentionedCount = 0;
+        for (const node of topology.nodes) {
+          if (parsed.reconstructionPrompt.toLowerCase().includes(node.label.toLowerCase())) {
+            mentionedCount++;
+          }
+        }
+
+        let promptToUse = parsed.reconstructionPrompt;
+        // If diagram has >= 5 components and AI prompt mentioned less than 70% of them,
+        // use the guaranteed 100% exhaustive deterministic prompt so the user never receives a truncated 4-line prompt.
+        if (topology.nodes.length >= 5 && mentionedCount / topology.nodes.length < 0.7) {
+          console.warn(
+            `AI reconstructionPrompt was incomplete (${mentionedCount}/${topology.nodes.length} nodes mentioned). Using exhaustive prompt.`
+          );
+          promptToUse = deterministicResult.reconstructionPrompt;
+        }
+
         return {
           title: parsed.title || deterministicResult.title,
           summary: parsed.summary || deterministicResult.summary,
-          reconstructionPrompt: parsed.reconstructionPrompt,
+          reconstructionPrompt: promptToUse,
           systemSpecMarkdown: parsed.systemSpecMarkdown || deterministicResult.systemSpecMarkdown,
           mermaidSyntax: deterministicResult.mermaidSyntax,
           nodeCount: topology.nodes.length,
