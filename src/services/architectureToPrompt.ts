@@ -23,6 +23,8 @@ export interface EnhancedTopologyNode {
   type: string;
   x?: number;
   y?: number;
+  width?: number;
+  height?: number;
 }
 
 export interface EnhancedTopologyEdge {
@@ -44,7 +46,7 @@ export interface EnhancedTopology {
  */
 export function extractEnhancedTopology(xml: string): EnhancedTopology {
   const base = extractTopologyFromXml(xml);
-  const nodeMap = new Map<string, { label: string; x?: number; y?: number }>();
+  const nodeMap = new Map<string, { label: string; x?: number; y?: number; width?: number; height?: number }>();
 
   // Extract geometry
   const cellRegex = /<mxCell\b([^>]*\bvertex="1"[^>]*)>([\s\S]*?)<\/mxCell>|<mxCell\b([^>]*\bvertex="1"[^>]*)\/>/g;
@@ -58,17 +60,24 @@ export function extractEnhancedTopology(xml: string): EnhancedTopology {
     const geoMatch = /<mxGeometry\b([^>]*)\/?>/.exec(inner);
     let x: number | undefined;
     let y: number | undefined;
+    let width: number | undefined;
+    let height: number | undefined;
+
     if (geoMatch) {
       const xM = /\bx="([^"]+)"/.exec(geoMatch[1]);
       const yM = /\by="([^"]+)"/.exec(geoMatch[1]);
+      const wM = /\bwidth="([^"]+)"/.exec(geoMatch[1]);
+      const hM = /\bheight="([^"]+)"/.exec(geoMatch[1]);
       if (xM) x = parseFloat(xM[1]);
       if (yM) y = parseFloat(yM[1]);
+      if (wM) width = parseFloat(wM[1]);
+      if (hM) height = parseFloat(hM[1]);
     }
 
     const valueMatch = /\bvalue="([^"]*)"/.exec(attrs) || /\blabel="([^"]*)"/.exec(attrs);
     const raw = valueMatch ? valueMatch[1].replace(/<[^>]*>/g, '').trim() : '';
     if (raw) {
-      nodeMap.set(idMatch[1], { label: raw, x, y });
+      nodeMap.set(idMatch[1], { label: raw, x, y, width, height });
     }
   }
 
@@ -78,6 +87,8 @@ export function extractEnhancedTopology(xml: string): EnhancedTopology {
       ...n,
       x: geo?.x,
       y: geo?.y,
+      width: geo?.width,
+      height: geo?.height,
     };
   });
 
@@ -180,7 +191,89 @@ export function generateMermaidFromTopology(topology: EnhancedTopology): string 
 }
 
 /**
- * Deterministic local synthesis engine: Generates a complete, exhaustive, publication-grade prompt.
+ * Graph-Aware Semantic Topology Analyzer:
+ * Decomposes topology into Starting Points, Center Spine Highway, Orchestration, Rails, Terminal Sinks, and Backbones.
+ */
+function analyzeTopologicalFlow(topology: EnhancedTopology) {
+  const inDegree = new Map<string, number>();
+  const outDegree = new Map<string, number>();
+  const targetsOf = new Map<string, string[]>();
+
+  for (const n of topology.nodes) {
+    inDegree.set(n.id, 0);
+    outDegree.set(n.id, 0);
+    targetsOf.set(n.id, []);
+  }
+
+  for (const e of topology.edges) {
+    inDegree.set(e.target, (inDegree.get(e.target) || 0) + 1);
+    outDegree.set(e.source, (outDegree.get(e.source) || 0) + 1);
+    targetsOf.get(e.source)?.push(e.target);
+  }
+
+  // 1. Streaming Backbone (Dots Stream, Kafka, etc.)
+  const streamingNodes = topology.nodes.filter(
+    (n) => /stream|bus|dots|kafka|backbone/i.test(n.label) || (n.width && n.width >= 450)
+  );
+
+  // 2. Terminal Endpoint / Sinks (FE, BFF, Frontend apps)
+  const terminalNodes = topology.nodes.filter((n) => {
+    const l = n.label.toLowerCase();
+    return /\bfe\b|\bbff\b|frontend|client|player/i.test(l) || (n.height && n.height >= 400);
+  });
+
+  // 3. Publishing Rails (stacked vertical features)
+  const railNodes = topology.nodes.filter((n) => {
+    const l = n.label.toLowerCase();
+    const isSmallHeight = n.height && n.height <= 45;
+    const isRailNamed = /rail|slate|event|epg|waterfront|favorites|shortcut|playback|score|history|personalisation|search/i.test(l);
+    return !streamingNodes.some((s) => s.id === n.id) && !terminalNodes.some((t) => t.id === n.id) && (isSmallHeight || isRailNamed);
+  });
+
+  // 4. Starting Points / Upstream Sources (in-degree 0 or far-left)
+  const sourceNodes = topology.nodes.filter((n) => {
+    if (streamingNodes.some((s) => s.id === n.id) || terminalNodes.some((t) => t.id === n.id) || railNodes.some((r) => r.id === n.id)) {
+      return false;
+    }
+    const l = n.label.toLowerCase();
+    const isPureSource = (inDegree.get(n.id) || 0) === 0;
+    const isSourceName = /planning|partner|studio|imdb|gracenote|vam|sports provider|rights/i.test(l);
+    return isPureSource || isSourceName || (n.x !== undefined && n.x < 320);
+  });
+
+  // 5. Core Processing Spine (Horizontal Highway)
+  const spineCandidates = topology.nodes.filter((n) => {
+    const l = n.label.toLowerCase();
+    if (streamingNodes.some((s) => s.id === n.id) || terminalNodes.some((t) => t.id === n.id) || railNodes.some((r) => r.id === n.id) || sourceNodes.some((src) => src.id === n.id)) {
+      return false;
+    }
+    return /parser|mel|dcms|oca|feeds|kinesis|firehose|producer|ingest|habit/i.test(l);
+  });
+
+  // 6. Orchestration & Support Services
+  const orchestrationNodes = topology.nodes.filter((n) => {
+    return (
+      !streamingNodes.some((s) => s.id === n.id) &&
+      !terminalNodes.some((t) => t.id === n.id) &&
+      !railNodes.some((r) => r.id === n.id) &&
+      !sourceNodes.some((src) => src.id === n.id) &&
+      !spineCandidates.some((sp) => sp.id === n.id)
+    );
+  });
+
+  return {
+    sourceNodes,
+    spineCandidates,
+    orchestrationNodes,
+    railNodes,
+    terminalNodes,
+    streamingNodes,
+  };
+}
+
+/**
+ * Deterministic local synthesis engine: Generates a complete, exhaustive, publication-grade prompt
+ * with full architectural context (Starting Point, Center Spine, Rails, End Point, Bottom Backbone).
  * GUARANTEE: Mentions 100% of all components and 100% of all data flows without truncating.
  */
 export function synthesizeDeterministicPrompt(topology: EnhancedTopology): ArchitecturePromptResult {
@@ -191,22 +284,78 @@ export function synthesizeDeterministicPrompt(topology: EnhancedTopology): Archi
   const nodeLabels = topology.nodes.map((n) => n.label);
   const primaryService = nodeLabels.find((l) => /service|pipeline|workflow|platform|dazn|mfl/i.test(l)) || nodeLabels[0] || 'Enterprise';
   const title = `${primaryService} Architecture Flow`;
-  const summary = `Comprehensive enterprise architecture diagram containing ${nodeCount} components organized across ${tiers.length} architectural tiers with ${edgeCount} explicit data flow connections.`;
+  const summary = `Comprehensive enterprise architecture diagram containing ${nodeCount} components organized with clear starting points, a central horizontal processing highway, supporting orchestration, vertical publishing rails, and terminal consumer endpoints.`;
 
-  // Build the Comprehensive Prompt containing ALL components and ALL data flows
+  const flowContext = analyzeTopologicalFlow(topology);
+
+  // Build the Comprehensive Context-Rich Prompt
   const promptLines: string[] = [
     `Create a high-fidelity technical architecture diagram with a '${topology.orientation}' orientation.`,
-    `The diagram must visualize a complete enterprise system comprising ${nodeCount} components and ${edgeCount} explicit data flow connections:`,
+    `The system visualizes an end-to-end media platform with explicit starting points, a central horizontal processing spine, supporting orchestration, vertical publishing rails, and terminal consumer endpoints (${nodeCount} components, ${edgeCount} data flows):`,
     '',
-    '### ARCHITECTURAL TIERS & COMPONENT MANIFEST:',
   ];
 
-  tiers.forEach((tier, idx) => {
-    promptLines.push(`${idx + 1}. ${tier.name}:`);
-    promptLines.push(`   - Components: ${tier.components.map((c) => `'${c}'`).join(', ')}`);
-  });
+  // 1. Starting Points
+  if (flowContext.sourceNodes.length > 0) {
+    promptLines.push('### 1. STARTING POINTS & UPSTREAM INGESTION (Far Left, x ≈ 60-220):');
+    promptLines.push(
+      `- Position upstream entry sources on the far left: ${flowContext.sourceNodes.map((s) => `'${s.label}'`).join(', ')}.`
+    );
+    promptLines.push('');
+  }
 
-  promptLines.push('', '### STEP-BY-STEP DATA FLOW CONNECTIONS:');
+  // 2. Core Processing Spine Highway
+  if (flowContext.spineCandidates.length > 0) {
+    promptLines.push('### 2. CORE HORIZONTAL PROCESSING SPINE (Center Highway, Left-to-Right, y ≈ 360):');
+    promptLines.push(
+      `- Lay out the primary transformation pipeline sequentially along the center horizontal row: ${flowContext.spineCandidates.map((sp) => `'${sp.label}'`).join(' ➔ ')}.`
+    );
+    promptLines.push('- Ensure all spine nodes are aligned along the horizontal centerline with generous spacing.');
+    promptLines.push('');
+  }
+
+  // 3. Orchestration & Support Services
+  if (flowContext.orchestrationNodes.length > 0) {
+    promptLines.push('### 3. ORCHESTRATION & SUPPORT SERVICES (Placed Above & Below Center Spine):');
+    promptLines.push(
+      `- Position management, content rights, and configuration dependencies: ${flowContext.orchestrationNodes.map((o) => `'${o.label}'`).join(', ')}.`
+    );
+    promptLines.push('');
+  }
+
+  // 4. Publishing Rails (Vertical Stack)
+  if (flowContext.railNodes.length > 0) {
+    promptLines.push(`### 4. PUBLISHING RAILS (Vertical Stack on the Right, x ≈ 1680):`);
+    promptLines.push(
+      `- Stack the following ${flowContext.railNodes.length} consumer rails in a single, neat vertical column:`
+    );
+    promptLines.push(`  ${flowContext.railNodes.map((r) => `'${r.label}'`).join(', ')}.`);
+    promptLines.push('- Connect core ingestion and management services directly into these rails.');
+    promptLines.push('');
+  }
+
+  // 5. Terminal Endpoint
+  if (flowContext.terminalNodes.length > 0) {
+    promptLines.push('### 5. TERMINAL DESTINATION / CONSUMER ENDPOINT (Far Right, x ≈ 1950):');
+    promptLines.push(
+      `- Position ${flowContext.terminalNodes.map((t) => `'${t.label}'`).join(', ')} as the tall bracketed terminal endpoint on the far right.`
+    );
+    promptLines.push('- Connect all publishing rails into this terminal endpoint.');
+    promptLines.push('');
+  }
+
+  // 6. Streaming Backbone
+  if (flowContext.streamingNodes.length > 0) {
+    promptLines.push('### 6. EVENT STREAMING BACKBONE (Horizontal Bus along the Bottom, y ≈ 980):');
+    promptLines.push(
+      `- Position ${flowContext.streamingNodes.map((s) => `'${s.label}'`).join(', ')} as a wide horizontal streaming backbone across the entire bottom of the canvas.`
+    );
+    promptLines.push('- Connect downward stream taps from core processing nodes into this bus.');
+    promptLines.push('');
+  }
+
+  // 7. Step-by-Step Data Flow Connections
+  promptLines.push('### 7. STEP-BY-STEP DATA FLOW CONNECTIONS:');
   if (topology.edges.length > 0) {
     topology.edges.forEach((e, idx) => {
       const protocolStr = e.label ? ` via "${e.label}"` : '';
@@ -216,32 +365,13 @@ export function synthesizeDeterministicPrompt(topology: EnhancedTopology): Archi
     promptLines.push('Connect upstream ingestion services to processing services down to datastores.');
   }
 
-  // Detect wide buses (e.g. Dots Stream)
-  const streamingNodes = topology.nodes.filter((n) => /stream|bus|dots/i.test(n.label));
-  if (streamingNodes.length > 0) {
-    promptLines.push(
-      '',
-      '### STREAMING BUS & DATA LAKE:',
-      `- Position ${streamingNodes.map((s) => `'${s.label}'`).join(', ')} as a horizontal event streaming backbone along the bottom.`
-    );
-  }
-
-  // Detect configuration nodes
-  const configNodes = topology.nodes.filter((n) => /config|setting|vault/i.test(n.label));
-  if (configNodes.length > 0) {
-    promptLines.push(
-      '',
-      '### CONFIGURATION & DEPENDENCIES:',
-      `- Place ${configNodes.map((c) => `'${c.label}'`).join(', ')} as configuration dependencies adjacent to core services.`
-    );
-  }
-
+  // 8. Visual Directives
   promptLines.push(
     '',
-    '### VISUAL STYLING & DIRECTIVES:',
-    "- Use distinct icons & styles: 'actor' for human clients/partners, 'rounded' for SDKs/Gateways, 'rectangle' for core services, 'cloud' for external providers and streaming buses, 'cylinder' for databases.",
-    "- Maintain clean left-to-right columnar flow with generous spacing between components (min 80px horizontal gap).",
-    "- Ensure all connecting arrows use clean orthogonal 90-degree routing without overlapping boxes."
+    '### 8. VISUAL DIRECTIVES & RENDERING GUIDELINES:',
+    "- Maintain clean orthogonal 90-degree routing for all connection arrows without crossing through shapes.",
+    "- Preserve clear visual separation between the horizontal center spine and the vertical publishing rails.",
+    "- Use distinct pastel colors: Mint Green for Ingestion/SDKs, Tech Blue for Core Spine Services, Warm Amber for Sources & External Streams, Light Purple for Config."
   );
 
   const reconstructionPrompt = promptLines.join('\n');
@@ -355,20 +485,24 @@ Analyze the following extracted architecture topology graph (${topology.nodes.le
 ${topologyContext}
 
 Your mission:
-Generate an EXHAUSTIVE, production-grade natural language AI PROMPT such that when any engineer or AI diagram generator reads it, they can re-generate this exact architecture flow with 100% fidelity.
+Generate an EXHAUSTIVE, production-grade natural language AI PROMPT such that when any engineer or AI diagram generator reads it, they understand:
+1. WHAT IS THE STARTING POINT (Upstream Sources & Ingestion on Far Left)
+2. WHAT IS THE CORE PROCESSING HIGHWAY (Center Horizontal Spine flowing Left-to-Right)
+3. WHAT ARE THE ORCHESTRATION & SUPPORT SERVICES (Positioned Above/Below Center Spine)
+4. WHAT ARE THE PUBLISHING RAILS (Tidy vertical stack on the right)
+5. WHAT IS THE TERMINAL DESTINATION / ENDPOINT (Tall consumer bracket on Far Right)
+6. WHAT IS THE EVENT STREAMING BACKBONE (Horizontal bus along the bottom)
 
 CRITICAL COMPLETENESS RULES:
-1. YOU MUST MENTION EVERY SINGLE COMPONENT FROM THE INPUT TOPOLOGY. Never omit, compress, or summarize components away!
-2. Group all components into logical Architectural Tiers (e.g. Ingestion, Processing Pipeline, Infrastructure, Delivery Rails, Event Streaming, Configuration).
-3. Under each tier, explicitly enumerate ALL component names in quotes.
-4. Enumerate ALL step-by-step data flow hops connecting components: "Connect 'A' to 'B' via [Label]".
-5. Provide clear visual layout and grouping instructions (e.g. processing spine in center, publishing rails in vertical stack on right, streaming backbone at bottom).
+1. YOU MUST MENTION EVERY SINGLE COMPONENT FROM THE INPUT TOPOLOGY (${topology.nodes.length} components). Never omit or summarize components away!
+2. Structure the prompt into the exact semantic sections described above.
+3. Enumerate ALL step-by-step data flow hops connecting components: "Connect 'A' to 'B' via [Label]".
 
 Output a valid JSON object matching this exact schema:
 {
-  "title": "Authoritative System Title (e.g. 'DAZN Ingestion, Processing & Rail Publishing Pipeline')",
-  "summary": "2-3 sentences explaining the architectural intent, flow direction, and functional purpose.",
-  "reconstructionPrompt": "The complete, detailed, non-truncated reconstruction prompt containing every component and connection.",
+  "title": "Authoritative System Title",
+  "summary": "2-3 sentences explaining the architectural intent, starting points, processing highway, and terminal consumer.",
+  "reconstructionPrompt": "The complete, detailed, non-truncated reconstruction prompt containing every component and connection organized with full context.",
   "systemSpecMarkdown": "An engineering RFC specification in GitHub-flavored markdown with: 1. Overview, 2. Complete Tier Breakdown, 3. Step-by-Step Data Flow Table, 4. Resilience & Security Analysis.",
   "tiers": [
     { "name": "TIER NAME", "components": ["Comp1", "Comp2"] }

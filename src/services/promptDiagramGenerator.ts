@@ -5,25 +5,44 @@ import { normalizeAndEnhanceDiagram } from './diagramLayoutOptimizer';
 const PROMPT_ENGINE_INSTRUCTIONS = `You are a Principal Cloud Architecture and Diagram Engineer for draw.io (Vdraw).
 Your job is to convert natural language architectural descriptions, flowcharts, or system briefs into pristine, publication-grade enterprise architecture models in pure JSON.
 
-### ARCHITECTURAL RULES & TIER MAPPING:
-1. TIER CLUSTERING (Left-to-Right Columnar Flow):
-   - TIER 1 (Far Left, x ≈ 80): End-user clients, mobile apps, web browsers. Always use shape "actor".
-   - TIER 2 (x ≈ 340): Integration layer, SDKs, API Gateways, Edge proxies, Matchers. Use shape "rounded".
-   - TIER 3 (x ≈ 640): Orchestration, Microservices, Domain APIs, Business Logic services. Use shape "rectangle".
-   - TIER 4 (Far Right, x ≈ 940): External Providers, Third-party APIs, SaaS, Cloud Data Streams. Use shape "cloud".
-   - DEPENDENCIES & CONFIG (x matching target service): Configuration, Secret Vaults, Settings modules. Use shape "rectangle". Place directly below the service they configure.
+### ENTERPRISE ARCHITECTURE SPATIAL LAYOUT RULES (LEFT-TO-RIGHT WITH HIGHWAY SPINE):
+1. STARTING POINTS / UPSTREAM SOURCES (Far Left, x ≈ 40 - 240):
+   - Position end-user clients, mobile apps ('actor'), upstream media/partner ingestion ('rounded'/'rectangle'), and content providers on the far left.
+   - For example: 'Entertainment Planning', 'Gracenote', 'IMDB', 'Sports Provider' at x ≈ 40-200.
 
-2. STRICT CONNECTOR FIDELITY & ANTI-MISWIRING:
-   - Carefully trace every source -> target connection explicitly specified in the prompt.
-   - If the prompt states "Place 'Config' as a dependency for 'MFL Service'", create an edge where source is 'Config' and target is 'MFL Service' (NOT to any other node like 'DOTS Stream'!).
-   - Connector labels: Use the exact label requested (e.g. "standard communication", "HTTPS", "REST", "Bi-directional"). Never duplicate words or output repeating phrases.
+2. PRIMARY HORIZONTAL PROCESSING HIGHWAY / SPINE (Center Left-to-Right Row, y ≈ 360):
+   - Lay out the sequential transformation chain along the horizontal center row (y ≈ 350-380) from left to right.
+   - x starts around 230 and increments by 160-180px for each successive step:
+     e.g., Pre MEL Parser (x: 230, y: 360) ➔ DAZN MEL (x: 400, y: 360) ➔ DCMS (x: 580, y: 360) ➔ OCA (x: 740, y: 360) ➔ DAZN FEEDS (x: 900, y: 360) ➔ Kinesis (x: 1080, y: 360) ➔ Producers (x: 1240, y: 360) ➔ Ingest (x: 1420, y: 360).
+   - NEVER collapse the sequential pipeline into a vertical column! They must flow horizontally along y ≈ 360.
 
-3. VISUAL ARCHETYPES:
+3. SUPPORT SERVICES & ORCHESTRATION (Above & Below Center Spine):
+   - Place upstream rights & management (e.g. WON, VDP) in the upper tier (y ≈ 60 - 200).
+   - Place metadata, entitlements, search indices (e.g. OpenSearch, Entitlement, SAM) directly above or below the spine node they connect to (y ≈ 240 - 280).
+   - Place configuration dependencies (e.g. Config, Discovery Config) directly adjacent to the node they configure.
+
+4. PUBLISHING RAILS / FEATURE STACKS (Tidy Vertical Column on the Right, x ≈ 1680):
+   - When a diagram contains parallel feature rails, channels, or menu rows (e.g. Rail, Slate, Event, EPG, Favorites, Stats, Search, etc.):
+     Stack them vertically in a neat column at x ≈ 1680 with y starting around 240 and incrementing by 45px per item (height: 35, width: 180).
+
+5. TERMINAL CONSUMER / ENDPOINT BRACKET (Far Right, x ≈ 1950 - 2000):
+   - Position terminal endpoints ('FE', 'BFF', 'Client App') at the far right as a tall bracket collecting inputs from the publishing rails:
+     x ≈ 2000, y ≈ 260, width ≈ 90, height ≈ 680.
+
+6. EVENT STREAMING BACKBONE (Horizontal Bus along the Bottom, y ≈ 1000):
+   - Position event buses, Kafka clusters, and data lakes ('Dots Stream', 'Data Stream') as a wide banner across the entire bottom:
+     x ≈ 40, y ≈ 1000, width ≈ 1950, height ≈ 60.
+
+7. STRICT CONNECTOR FIDELITY:
+   - Carefully connect every source -> target specified in the prompt.
+   - All connectors must use 'orthogonal' routing.
+
+8. VISUAL ARCHETYPES:
    - "actor" for Users, Mobile Clients, Web Browsers (width: 100, height: 110)
-   - "rounded" for SDKs, API Gateways (width: 150, height: 60)
-   - "rectangle" for Domain Services, APIs, Configs (width: 160, height: 65)
+   - "rounded" for SDKs, API Gateways, Rails (width: 140-180, height: 35-60)
+   - "rectangle" for Domain Services, APIs, Configs (width: 140-160, height: 60-65)
    - "cloud" for External Providers, Third Parties, External Streams (width: 160, height: 75)
-   - "cylinder" for Databases, persistent caches (width: 120, height: 75)
+   - "cylinder" for Databases, search indices (width: 100-120, height: 65-75)
 
 Output strictly valid JSON matching this schema:
 {
@@ -111,74 +130,35 @@ export async function generateDiagramFromPrompt(
       const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!raw) continue;
 
-      const parsed: ExtractedDiagram = JSON.parse(raw);
+      let cleaned = raw.trim();
+      if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+      }
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+      }
+
+      const parsed: ExtractedDiagram = JSON.parse(cleaned);
 
       // Determine orientation preference from prompt
       const isLtr = !prompt.toLowerCase().includes('top-to-bottom');
       const enhancedDiagram = normalizeAndEnhanceDiagram(parsed, {
         orientation: isLtr ? 'left-to-right' : 'top-to-bottom',
-        alignTiers: true,
+        alignTiers: false, // PRESERVE the model's generated spatial layout without forcing a 1-column dump!
         applyHarmonizedColors: true,
       });
 
       const xml = synthesizeDrawioXml(enhancedDiagram, theme);
-      return { diagram: enhancedDiagram, xml };
+      return {
+        diagram: enhancedDiagram,
+        xml,
+      };
     } catch (err) {
       lastError = String(err);
     }
   }
 
-  if (lastError) {
-    console.warn('Prompt generator models failed, using local fallback:', lastError);
-  }
-
-  // Offline / deterministic fallback if API is not reachable
-  const fallback = generateFallbackDiagramFromPrompt(prompt);
-  const normalizedFallback = normalizeAndEnhanceDiagram(fallback, {
-    orientation: 'left-to-right',
-    alignTiers: true,
-    applyHarmonizedColors: true,
-  });
-  const fallbackXml = synthesizeDrawioXml(normalizedFallback, theme);
-  return { diagram: normalizedFallback, xml: fallbackXml };
-}
-
-/**
- * Intelligent deterministic fallback that extracts components and relationships from prompt text.
- */
-function generateFallbackDiagramFromPrompt(prompt: string): ExtractedDiagram {
-  // Extract quoted strings or capitalized components
-  const quotedMatches = Array.from(prompt.matchAll(/'([^']+)'|"([^"]+)"/g)).map((m) => m[1] || m[2]);
-  const uniqueNames = Array.from(new Set(quotedMatches)).filter((s) => s.length > 1 && !/standard communication|left-to-right/i.test(s));
-
-  if (uniqueNames.length === 0) {
-    uniqueNames.push('Client', 'API Gateway', 'Core Service', 'Database');
-  }
-
-  const nodes = uniqueNames.map((name, idx) => ({
-    id: `node_${idx + 1}`,
-    label: name,
-    shape: 'rectangle' as const,
-    x: 80 + (idx % 4) * 260,
-    y: 140 + Math.floor(idx / 4) * 160,
-    width: 150,
-    height: 65,
-  }));
-
-  const edges = [];
-  for (let i = 0; i < nodes.length - 1; i++) {
-    edges.push({
-      id: `edge_${i + 1}`,
-      source: nodes[i].id,
-      target: nodes[i + 1].id,
-      label: 'standard communication',
-      style: 'orthogonal' as const,
-    });
-  }
-
-  return {
-    title: 'Generated Architecture Flow',
-    nodes,
-    edges,
-  };
+  throw new Error(`Failed to generate diagram from prompt: ${lastError || 'All models failed'}`);
 }
