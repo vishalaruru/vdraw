@@ -589,6 +589,29 @@ function applyAlign(
         break;
     }
   }
+
+  // Deconflict overlaps along the non-aligned axis
+  if (alignment === 'left' || alignment === 'center' || alignment === 'right') {
+    eligible.sort((a, b) => a.y - b.y);
+    let curY = eligible[0].y;
+    for (let i = 0; i < eligible.length; i++) {
+      if (i > 0) {
+        curY = Math.max(curY, eligible[i].y);
+      }
+      eligible[i].y = Math.round(curY / 20) * 20;
+      curY += eligible[i].h + (eligible[i].h <= 45 ? 20 : 35);
+    }
+  } else if (alignment === 'top' || alignment === 'middle' || alignment === 'bottom') {
+    eligible.sort((a, b) => a.x - b.x);
+    let curX = eligible[0].x;
+    for (let i = 0; i < eligible.length; i++) {
+      if (i > 0) {
+        curX = Math.max(curX, eligible[i].x);
+      }
+      eligible[i].x = Math.round(curX / 20) * 20;
+      curX += eligible[i].w + 40;
+    }
+  }
 }
 
 /**
@@ -631,21 +654,36 @@ function applyHierarchicalFlow(
     }
   }
 
-  // Fallback if graph is cyclic
+  // Fallback if entire graph is cyclic or has no root
   if (queue.length === 0) {
     ranks.set(standardNodes[0].id, 0);
     queue.push(standardNodes[0].id);
   }
 
-  while (queue.length > 0) {
+  // Safe cycle-breaking BFS traversal (prevents browser freeze on cyclic links)
+  const visitedCount = new Map<string, number>();
+  let safetyCounter = 0;
+  const maxIterations = standardNodes.length * 3;
+
+  while (queue.length > 0 && safetyCounter < maxIterations) {
+    safetyCounter++;
     const curr = queue.shift()!;
     const currRank = ranks.get(curr) || 0;
     const neighbors = adj.get(curr) || [];
 
     for (const nbr of neighbors) {
+      const visits = (visitedCount.get(nbr) || 0) + 1;
+      visitedCount.set(nbr, visits);
+
+      // Cycle detected: do not loop infinitely
+      if (visits > 2) {
+        continue;
+      }
+
       const existingRank = ranks.get(nbr);
       if (existingRank === undefined || existingRank < currRank + 1) {
-        ranks.set(nbr, currRank + 1);
+        const nextRank = Math.min(currRank + 1, standardNodes.length - 1);
+        ranks.set(nbr, nextRank);
         queue.push(nbr);
       }
     }
@@ -712,6 +750,30 @@ function applyHierarchicalFlow(
     banner.x = 60;
     banner.y = allMaxY + 80;
     banner.w = Math.max(banner.w, allRight);
+  }
+
+  // Enclose background containers dynamically around laid-out member nodes
+  const containerNodes = nodes.filter((n) => n.isContainer);
+  for (const container of containerNodes) {
+    const memberNodes = standardNodes.filter(
+      (n) =>
+        n.x >= container.x - 60 &&
+        n.x + n.w <= container.x + container.w + 60 &&
+        n.y >= container.y - 60 &&
+        n.y + n.h <= container.y + container.h + 60
+    );
+
+    if (memberNodes.length > 0) {
+      const minX = Math.min(...memberNodes.map((n) => n.x));
+      const maxX = Math.max(...memberNodes.map((n) => n.x + n.w));
+      const minY = Math.min(...memberNodes.map((n) => n.y));
+      const maxY = Math.max(...memberNodes.map((n) => n.y + n.h));
+
+      container.x = Math.round((minX - 30) / 20) * 20;
+      container.y = Math.round((minY - 50) / 20) * 20;
+      container.w = Math.round((maxX - minX + 60) / 20) * 20;
+      container.h = Math.round((maxY - minY + 80) / 20) * 20;
+    }
   }
 }
 
