@@ -66,10 +66,9 @@ export async function generateDiagramFromPrompt(
   const keyToUse = cleanPassed || envKey || cleanStored;
 
   const candidateModels = [
-    'gemini-3-flash-preview',
-    'gemini-3.1-flash-lite',
-    'gemini-3.5-flash',
     'gemini-flash-lite-latest',
+    'gemini-3-flash-preview',
+    'gemini-3.5-flash',
   ];
 
   let lastError = '';
@@ -98,6 +97,7 @@ export async function generateDiagramFromPrompt(
               responseMimeType: 'application/json',
             },
           }),
+          signal: AbortSignal.timeout(12000),
         }
       );
 

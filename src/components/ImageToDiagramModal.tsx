@@ -204,15 +204,19 @@ export const ImageToDiagramModal: React.FC<ImageToDiagramModalProps> = ({
         diagram = result.diagram;
         setIsFromCache(result.fromCache || false);
         setStatusMessage(result.message || 'Diagram structure extracted!');
+        if (result.rawXml) {
+          setGeneratedXml(result.rawXml);
+        } else {
+          setGeneratedXml(synthesizeDrawioXml(diagram, theme));
+        }
       } else if (generatedDiagram) {
         diagram = generatedDiagram;
+        setGeneratedXml(synthesizeDrawioXml(diagram, theme));
       } else {
         throw new Error('No valid image data to analyze.');
       }
 
       setGeneratedDiagram(diagram);
-      const xml = synthesizeDrawioXml(diagram, theme);
-      setGeneratedXml(xml);
       setStatus('success');
       setRecentCached(getRecentCachedDiagrams());
     } catch (err: unknown) {

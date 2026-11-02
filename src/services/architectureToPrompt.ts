@@ -356,10 +356,9 @@ export async function generateReversePromptFromDiagram(
   }
 
   const candidateModels = [
-    'gemini-3-flash-preview',
-    'gemini-3.1-flash-lite',
-    'gemini-3.5-flash',
     'gemini-flash-lite-latest',
+    'gemini-3-flash-preview',
+    'gemini-3.5-flash',
   ];
 
   const topologyContext = JSON.stringify({
@@ -422,6 +421,7 @@ DO NOT output markdown backticks around the JSON. Output only raw JSON.`;
               temperature: 0.1,
               responseMimeType: 'application/json',
             },
+            signal: AbortSignal.timeout(12000),
           }),
         }
       );

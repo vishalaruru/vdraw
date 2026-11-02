@@ -59,10 +59,9 @@ export async function modifyDiagramWithCopilot(
   const keyToUse = cleanPassed || envKey || cleanStored;
 
   const candidateModels = [
-    'gemini-3-flash-preview',
-    'gemini-3.1-flash-lite',
-    'gemini-3.5-flash',
     'gemini-flash-lite-latest',
+    'gemini-3-flash-preview',
+    'gemini-3.5-flash',
   ];
 
   // Clean structured context representation
@@ -117,6 +116,7 @@ export async function modifyDiagramWithCopilot(
               temperature: 0.1,
               responseMimeType: 'application/json',
             },
+            signal: AbortSignal.timeout(12000),
           }),
         }
       );

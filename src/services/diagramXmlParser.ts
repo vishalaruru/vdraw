@@ -138,3 +138,4 @@ export function parseDrawioXmlToDiagram(xml: string): ExtractedDiagram {
 
   return { title, nodes, edges };
 }
+
