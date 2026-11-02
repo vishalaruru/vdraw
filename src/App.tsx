@@ -629,6 +629,18 @@ export const App: React.FC = () => {
     showToast('Exited Walkthrough Mode. Canvas restored.');
   };
 
+  // Purge any stale revoked API key from browser localStorage on startup
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('GEMINI_API_KEY');
+      if (stored && stored.includes('AIzaSyBCdBG4Cu')) {
+        localStorage.removeItem('GEMINI_API_KEY');
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
   // Global Keyboard Shortcuts (Cmd+K, Cmd+S, Cmd+Z, Cmd+Shift+Z) (#2)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

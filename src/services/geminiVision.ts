@@ -89,9 +89,11 @@ export async function analyzeDiagramImage(
   const base64Data = await fileToBase64(file);
   const mimeType = file.type || 'image/png';
 
-  const DEFAULT_KEY = '';
   const envKey = (import.meta as unknown as { env?: { VITE_GEMINI_API_KEY?: string } })?.env?.VITE_GEMINI_API_KEY || '';
-  const keyToUse = apiKey || localStorage.getItem('GEMINI_API_KEY') || envKey || DEFAULT_KEY;
+  const storedKey = (typeof localStorage !== 'undefined' ? localStorage.getItem('GEMINI_API_KEY') : '') || '';
+  const cleanStored = storedKey.includes('AIzaSyBCdBG4Cu') ? '' : storedKey;
+  const cleanPassed = (apiKey && !apiKey.includes('AIzaSyBCdBG4Cu')) ? apiKey : '';
+  const keyToUse = cleanPassed || envKey || cleanStored;
 
   if (keyToUse.trim()) {
     // Prioritize fast, ultra-responsive vision models

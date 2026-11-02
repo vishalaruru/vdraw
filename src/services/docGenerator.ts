@@ -29,9 +29,11 @@ export async function generateTechSpecDocument(
   xml: string,
   apiKey?: string
 ): Promise<string> {
-  const DEFAULT_KEY = '';
   const envKey = (import.meta as unknown as { env?: { VITE_GEMINI_API_KEY?: string } })?.env?.VITE_GEMINI_API_KEY || '';
-  const keyToUse = apiKey || localStorage.getItem('GEMINI_API_KEY') || envKey || DEFAULT_KEY;
+  const storedKey = (typeof localStorage !== "undefined" ? localStorage.getItem("GEMINI_API_KEY") : "") || "";
+  const cleanStored = storedKey.includes("AIzaSyBCdBG4Cu") ? "" : storedKey;
+  const cleanPassed = (apiKey && !apiKey.includes("AIzaSyBCdBG4Cu")) ? apiKey : "";
+  const keyToUse = cleanPassed || envKey || cleanStored;
 
   const candidateModels = [
     'gemini-3-flash-preview',

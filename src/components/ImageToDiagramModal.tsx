@@ -51,11 +51,14 @@ export const ImageToDiagramModal: React.FC<ImageToDiagramModalProps> = ({
   const [theme, setTheme] = useState<ThemePreset>('modern-indigo');
   const [insertMode, setInsertMode] = useState<'replace' | 'merge'>('replace');
   const [apiKey, setApiKey] = useState<string>(() => {
-    return (
-      localStorage.getItem('GEMINI_API_KEY') ||
-      (import.meta as unknown as { env?: { VITE_GEMINI_API_KEY?: string } })?.env?.VITE_GEMINI_API_KEY ||
-      ''
-    );
+    const envKey =
+      (import.meta as unknown as { env?: { VITE_GEMINI_API_KEY?: string } })?.env?.VITE_GEMINI_API_KEY || '';
+    const stored = localStorage.getItem('GEMINI_API_KEY') || '';
+    if (stored.includes('AIzaSyBCdBG4Cu')) {
+      localStorage.removeItem('GEMINI_API_KEY');
+      return envKey;
+    }
+    return envKey || stored;
   });
   const [showKeyInput, setShowKeyInput] = useState(false);
 
