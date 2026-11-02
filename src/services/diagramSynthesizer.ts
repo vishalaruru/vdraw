@@ -156,7 +156,142 @@ export function synthesizeDrawioXml(
     cellsXml += `        </mxCell>\n`;
   }
 
-  // 2. Render Regular Component Nodes
+  // 2. Render Edges (rendered BEFORE component nodes so component shapes sit cleanly on top)
+  const edgeBaseStyle =
+    'edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;jumpStyle=arc;jumpSize=6;';
+
+  const nodeMap = new Map<string, (typeof diagram.nodes)[0]>();
+  for (const n of diagram.nodes) {
+    nodeMap.set(n.id, n);
+  }
+
+  for (const edge of diagram.edges) {
+    let edgeStyle = edgeBaseStyle;
+    if (edge.style === 'curved') {
+      edgeStyle =
+        'edgeStyle=orthogonalEdgeStyle;curved=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;jumpStyle=arc;jumpSize=6;';
+    } else if (edge.style === 'straight') {
+      edgeStyle = 'orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;jumpStyle=arc;jumpSize=6;';
+    }
+
+    edgeStyle += `strokeColor=${edge.strokeColor || theme.edgeStroke};strokeWidth=1.5;fontColor=${theme.edgeFont};`;
+    if (edge.dashed) edgeStyle += 'dashed=1;';
+    if (edge.label) edgeStyle += 'labelBackgroundColor=#ffffff;';
+
+    const sNode = nodeMap.get(edge.source);
+    const tNode = nodeMap.get(edge.target);
+
+    let waypoints: { x: number; y: number }[] = [];
+    if (sNode && tNode) {
+      const sRight = sNode.x + sNode.width;
+      const sBottom = sNode.y + sNode.height;
+      const tRight = tNode.x + tNode.width;
+      const tBottom = tNode.y + tNode.height;
+
+      const isStrictlyRight = tNode.x >= sRight - 15;
+      const isStrictlyLeft = sNode.x >= tRight - 15;
+      const isStrictlyBelow = tNode.y >= sBottom - 15;
+      const isStrictlyAbove = sNode.y >= tBottom - 15;
+
+      const dx = (tNode.x + tNode.width / 2) - (sNode.x + sNode.width / 2);
+      const dy = (tNode.y + tNode.height / 2) - (sNode.y + sNode.height / 2);
+
+      let exitX = 1;
+      let exitY = 0.5;
+      let entryX = 0;
+      let entryY = 0.5;
+
+      if (isStrictlyRight && Math.abs(dy) <= Math.max(sNode.height, tNode.height) * 1.5) {
+        exitX = 1;
+        exitY = 0.5;
+        entryX = 0;
+        entryY = 0.5;
+      } else if (isStrictlyBelow && Math.abs(dx) <= Math.max(sNode.width, tNode.width) * 1.2) {
+        exitX = 0.5;
+        exitY = 1;
+        entryX = 0.5;
+        entryY = 0;
+      } else if (isStrictlyRight && isStrictlyBelow) {
+        if (tNode.y - sBottom > tNode.x - sRight) {
+          exitX = 0.5;
+          exitY = 1;
+          entryX = 0;
+          entryY = 0.5;
+        } else {
+          exitX = 1;
+          exitY = 0.5;
+          entryX = 0.5;
+          entryY = 0;
+        }
+      } else if (isStrictlyRight && isStrictlyAbove) {
+        exitX = 1;
+        exitY = 0.5;
+        entryX = 0.5;
+        entryY = 1;
+      } else if (isStrictlyLeft) {
+        exitX = 0;
+        exitY = 0.5;
+        entryX = 1;
+        entryY = 0.5;
+      } else if (isStrictlyAbove) {
+        exitX = 0.5;
+        exitY = 0;
+        entryX = 0.5;
+        entryY = 1;
+      }
+
+      // Obstacle detection along horizontal path
+      if (exitX === 1 && entryX === 0 && tNode.x > sRight + 50) {
+        const exitYCoord = sNode.y + exitY * sNode.height;
+        const entryYCoord = tNode.y + entryY * tNode.height;
+
+        const obstacles = regularNodes.filter(
+          (n) =>
+            n.id !== sNode.id &&
+            n.id !== tNode.id &&
+            n.x + n.width > sRight + 10 &&
+            n.x < tNode.x - 10 &&
+            n.y - 15 <= Math.max(exitYCoord, entryYCoord) &&
+            n.y + n.height + 15 >= Math.min(exitYCoord, entryYCoord)
+        );
+
+        if (obstacles.length > 0) {
+          const minObsY = Math.min(...obstacles.map((o) => o.y));
+          const maxObsY = Math.max(...obstacles.map((o) => o.y + o.height));
+          const topGutter = Math.min(minObsY, sNode.y, tNode.y) - 35;
+          const bottomGutter = Math.max(maxObsY, sBottom, tBottom) + 35;
+
+          const useTop = topGutter > 60 && Math.abs(exitYCoord - topGutter) <= Math.abs(exitYCoord - bottomGutter);
+          const gutterY = useTop ? topGutter : bottomGutter;
+
+          waypoints = [
+            { x: sRight + 20, y: gutterY },
+            { x: tNode.x - 20, y: gutterY },
+          ];
+          entryX = 0.5;
+          entryY = useTop ? 0 : 1;
+        }
+      }
+
+      edgeStyle += `exitX=${exitX};exitY=${exitY};exitDx=0;exitDy=0;entryX=${entryX};entryY=${entryY};entryDx=0;entryDy=0;`;
+    }
+
+    const escapedEdgeLabel = escapeXml(edge.label || '');
+
+    cellsXml += `        <mxCell id="${escapeXml(edge.id)}" value="${escapedEdgeLabel}" style="${edgeStyle}" edge="1" parent="1" source="${escapeXml(edge.source)}" target="${escapeXml(edge.target)}">\n`;
+    if (waypoints.length > 0) {
+      cellsXml += `          <mxGeometry relative="1" as="geometry">\n            <Array as="points">\n`;
+      for (const pt of waypoints) {
+        cellsXml += `              <mxPoint x="${Math.round(pt.x)}" y="${Math.round(pt.y)}" />\n`;
+      }
+      cellsXml += `            </Array>\n          </mxGeometry>\n`;
+    } else {
+      cellsXml += `          <mxGeometry relative="1" as="geometry" />\n`;
+    }
+    cellsXml += `        </mxCell>\n`;
+  }
+
+  // 3. Render Regular Component Nodes (rendered ON TOP of edges with opaque fill)
   for (const node of regularNodes) {
     const rawStyle = getShapeStyle(node.shape, theme);
     let finalStyle = rawStyle;
@@ -172,30 +307,6 @@ export function synthesizeDrawioXml(
 
     cellsXml += `        <mxCell id="${escapeXml(node.id)}" value="${escapedLabel}" style="${finalStyle}" vertex="1" parent="1">\n`;
     cellsXml += `          <mxGeometry x="${x}" y="${y}" width="${width}" height="${height}" as="geometry" />\n`;
-    cellsXml += `        </mxCell>\n`;
-  }
-
-  // 3. Render Edges (with dashed support and label background)
-  const edgeBaseStyle =
-    'edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;';
-
-  for (const edge of diagram.edges) {
-    let edgeStyle = edgeBaseStyle;
-    if (edge.style === 'curved') {
-      edgeStyle =
-        'edgeStyle=orthogonalEdgeStyle;curved=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;';
-    } else if (edge.style === 'straight') {
-      edgeStyle = 'orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;';
-    }
-
-    edgeStyle += `strokeColor=${edge.strokeColor || theme.edgeStroke};strokeWidth=1.5;fontColor=${theme.edgeFont};`;
-    if (edge.dashed) edgeStyle += 'dashed=1;';
-    if (edge.label) edgeStyle += 'labelBackgroundColor=#ffffff;';
-
-    const escapedEdgeLabel = escapeXml(edge.label || '');
-
-    cellsXml += `        <mxCell id="${escapeXml(edge.id)}" value="${escapedEdgeLabel}" style="${edgeStyle}" edge="1" parent="1" source="${escapeXml(edge.source)}" target="${escapeXml(edge.target)}">\n`;
-    cellsXml += `          <mxGeometry relative="1" as="geometry" />\n`;
     cellsXml += `        </mxCell>\n`;
   }
 

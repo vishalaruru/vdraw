@@ -123,6 +123,190 @@ function commitNodeGeometries(nodes: NodeCell[]) {
 }
 
 /**
+ * Commits intelligent perimeter routing, obstacle avoidance, and line jumps for all connectors.
+ * Eliminates arrows cutting across or resting on top of node surfaces.
+ */
+function commitEdgeRoutes(edges: EdgeCell[], nodes: NodeCell[], doc: Document) {
+  const nodeMap = new Map<string, NodeCell>();
+  for (const n of nodes) {
+    nodeMap.set(n.id, n);
+  }
+
+  const regularNodes = nodes.filter((n) => !n.isContainer);
+
+  for (const edge of edges) {
+    const sNode = nodeMap.get(edge.source);
+    const tNode = nodeMap.get(edge.target);
+    if (!sNode || !tNode) continue;
+
+    let geo = edge.cell.querySelector('mxGeometry');
+    if (!geo) {
+      geo = doc.createElement('mxGeometry');
+      geo.setAttribute('relative', '1');
+      geo.setAttribute('as', 'geometry');
+      edge.cell.appendChild(geo);
+    }
+
+    // 1. Purge stale fixed anchors and manual waypoints so arrows never point to obsolete coordinates
+    const stalePoints = geo.querySelectorAll('mxPoint[as="sourcePoint"], mxPoint[as="targetPoint"], Array[as="points"]');
+    stalePoints.forEach((p) => p.remove());
+
+    // 2. Standardize style with orthogonal routing and line jumps
+    let style = edge.cell.getAttribute('style') || '';
+    style = style
+      .replace(/\b(exit[XY]|exitD[xy]|entry[XY]|entryD[xy]|exitPerimeter|entryPerimeter)=[^;]+;/g, '')
+      .replace(/;+/g, ';');
+    if (style && !style.endsWith(';')) style += ';';
+
+    if (!style.includes('edgeStyle=')) {
+      style = `edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;${style}`;
+    }
+    if (!style.includes('jumpStyle=')) {
+      style += 'jumpStyle=arc;jumpSize=6;';
+    }
+
+    // 3. Compute clean perimeter docking coordinates
+    const sRight = sNode.x + sNode.w;
+    const sBottom = sNode.y + sNode.h;
+    const tRight = tNode.x + tNode.w;
+    const tBottom = tNode.y + tNode.h;
+
+    const isStrictlyRight = tNode.x >= sRight - 15;
+    const isStrictlyLeft = sNode.x >= tRight - 15;
+    const isStrictlyBelow = tNode.y >= sBottom - 15;
+    const isStrictlyAbove = sNode.y >= tBottom - 15;
+
+    const dx = tNode.x + tNode.w / 2 - (sNode.x + sNode.w / 2);
+    const dy = tNode.y + tNode.h / 2 - (sNode.y + sNode.h / 2);
+
+    let exitX = 1;
+    let exitY = 0.5;
+    let entryX = 0;
+    let entryY = 0.5;
+
+    if (isStrictlyRight && Math.abs(dy) <= Math.max(sNode.h, tNode.h) * 1.5) {
+      exitX = 1;
+      exitY = 0.5;
+      entryX = 0;
+      entryY = 0.5;
+    } else if (isStrictlyBelow && Math.abs(dx) <= Math.max(sNode.w, tNode.w) * 1.2) {
+      exitX = 0.5;
+      exitY = 1;
+      entryX = 0.5;
+      entryY = 0;
+    } else if (isStrictlyRight && isStrictlyBelow) {
+      if (tNode.y - sBottom > tNode.x - sRight) {
+        exitX = 0.5;
+        exitY = 1;
+        entryX = 0;
+        entryY = 0.5;
+      } else {
+        exitX = 1;
+        exitY = 0.5;
+        entryX = 0.5;
+        entryY = 0;
+      }
+    } else if (isStrictlyRight && isStrictlyAbove) {
+      exitX = 1;
+      exitY = 0.5;
+      entryX = 0.5;
+      entryY = 1;
+    } else if (isStrictlyLeft) {
+      exitX = 0;
+      exitY = 0.5;
+      entryX = 1;
+      entryY = 0.5;
+    } else if (isStrictlyAbove) {
+      exitX = 0.5;
+      exitY = 0;
+      entryX = 0.5;
+      entryY = 1;
+    }
+
+    // 4. Obstacle detection and gutter waypoints
+    let waypoints: { x: number; y: number }[] = [];
+
+    // Horizontal obstacle avoidance
+    if (exitX === 1 && entryX === 0 && tNode.x > sRight + 50) {
+      const exitYCoord = sNode.y + exitY * sNode.h;
+      const entryYCoord = tNode.y + entryY * tNode.h;
+
+      const obstacles = regularNodes.filter(
+        (n) =>
+          !n.isRailOrBanner &&
+          n.id !== sNode.id &&
+          n.id !== tNode.id &&
+          n.x + n.w > sRight + 10 &&
+          n.x < tNode.x - 10 &&
+          n.y - 15 <= Math.max(exitYCoord, entryYCoord) &&
+          n.y + n.h + 15 >= Math.min(exitYCoord, entryYCoord)
+      );
+
+      if (obstacles.length > 0) {
+        const minObsY = Math.min(...obstacles.map((o) => o.y));
+        const maxObsY = Math.max(...obstacles.map((o) => o.y + o.h));
+        const topGutter = Math.min(minObsY, sNode.y, tNode.y) - 35;
+        const bottomGutter = Math.max(maxObsY, sBottom, tBottom) + 35;
+
+        const useTop = topGutter > 60 && Math.abs(exitYCoord - topGutter) <= Math.abs(exitYCoord - bottomGutter);
+        const gutterY = useTop ? topGutter : bottomGutter;
+
+        waypoints = [
+          { x: sRight + 20, y: gutterY },
+          { x: tNode.x - 20, y: gutterY },
+        ];
+        entryX = 0.5;
+        entryY = useTop ? 0 : 1;
+      }
+    }
+
+    // Vertical obstacle avoidance
+    if (exitY === 1 && entryY === 0 && tNode.y > sBottom + 50) {
+      const exitXCoord = sNode.x + exitX * sNode.w;
+      const entryXCoord = tNode.x + entryX * tNode.w;
+
+      const obstacles = regularNodes.filter(
+        (n) =>
+          !n.isRailOrBanner &&
+          n.id !== sNode.id &&
+          n.id !== tNode.id &&
+          n.y + n.h > sBottom + 10 &&
+          n.y < tNode.y - 10 &&
+          n.x - 15 <= Math.max(exitXCoord, entryXCoord) &&
+          n.x + n.w + 15 >= Math.min(exitXCoord, entryXCoord)
+      );
+
+      if (obstacles.length > 0) {
+        const maxObsX = Math.max(...obstacles.map((o) => o.x + o.w));
+        const gutterX = maxObsX + 30;
+
+        waypoints = [
+          { x: gutterX, y: sBottom + 20 },
+          { x: gutterX, y: tNode.y - 20 },
+        ];
+        entryX = 1;
+        entryY = 0.5;
+      }
+    }
+
+    style += `exitX=${exitX};exitY=${exitY};exitDx=0;exitDy=0;entryX=${entryX};entryY=${entryY};entryDx=0;entryDy=0;`;
+    edge.cell.setAttribute('style', style);
+
+    if (waypoints.length > 0) {
+      const arr = doc.createElement('Array');
+      arr.setAttribute('as', 'points');
+      for (const pt of waypoints) {
+        const mxPt = doc.createElement('mxPoint');
+        mxPt.setAttribute('x', String(Math.round(pt.x)));
+        mxPt.setAttribute('y', String(Math.round(pt.y)));
+        arr.appendChild(mxPt);
+      }
+      geo.appendChild(arr);
+    }
+  }
+}
+
+/**
  * 1. SMART BEAUTIFY & DECONFLICT ENGINE:
  * Implements edge-aware peer re-anchoring, column clustering, vertical stack deconfliction,
  * column horizontal spacing, peer connector straightening, and wide backbone isolation.
@@ -315,7 +499,7 @@ function applySmartBeautify(nodes: NodeCell[], edges: EdgeCell[]) {
  * Reference: https://www.drawio.com/docs/manual/shapes/arrange-align-shapes/
  */
 function applyDistribute(nodes: NodeCell[], direction: 'horizontal' | 'vertical') {
-  const eligible = nodes.filter((n) => !n.isRailOrBanner && !n.isTallBracket);
+  const eligible = nodes.filter((n) => !n.isRailOrBanner && !n.isTallBracket && !n.isContainer);
   if (eligible.length < 3) return;
 
   if (direction === 'horizontal') {
@@ -372,7 +556,7 @@ function applyAlign(
   nodes: NodeCell[],
   alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom'
 ) {
-  const eligible = nodes.filter((n) => !n.isRailOrBanner && !n.isTallBracket);
+  const eligible = nodes.filter((n) => !n.isRailOrBanner && !n.isTallBracket && !n.isContainer);
   if (eligible.length < 2) return;
 
   const minX = Math.min(...eligible.map((n) => n.x));
@@ -417,7 +601,7 @@ function applyHierarchicalFlow(
   edges: EdgeCell[],
   orientation: 'left-to-right' | 'top-to-bottom'
 ) {
-  const standardNodes = nodes.filter((n) => !n.isRailOrBanner && !n.isTallBracket);
+  const standardNodes = nodes.filter((n) => !n.isRailOrBanner && !n.isTallBracket && !n.isContainer);
   if (standardNodes.length === 0) return;
 
   // In-degree & Out-degree calculation
@@ -595,6 +779,24 @@ export async function beautifyDiagramXml(
 
       // Write back updated coordinates to XML
       commitNodeGeometries(nodes);
+
+      // Re-route and perimeter-dock all edges with obstacle avoidance
+      commitEdgeRoutes(edges, nodes, doc);
+
+      // Reorder cells in <root> so:
+      // 1. Containers are background
+      // 2. Edges are middle
+      // 3. Regular component vertices are on top (masking any underlying lines cleanly)
+      const root = doc.querySelector('root');
+      if (root) {
+        const containers = nodes.filter((n) => n.isContainer).map((n) => n.cell);
+        const edgeCells = edges.map((e) => e.cell);
+        const regularCells = nodes.filter((n) => !n.isContainer).map((n) => n.cell);
+
+        for (const c of containers) root.appendChild(c);
+        for (const e of edgeCells) root.appendChild(e);
+        for (const r of regularCells) root.appendChild(r);
+      }
 
       const serializer = new XMLSerializer();
       const cleanedXml = serializer.serializeToString(doc);
