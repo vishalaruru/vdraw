@@ -9,6 +9,8 @@ import {
   Boxes,
   Zap,
   Activity,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { ArchitectureAuditResult, SecurityFinding } from '../services/architectureAuditor';
 
@@ -29,6 +31,7 @@ export const ArchitectureAuditDrawer: React.FC<ArchitectureAuditDrawerProps> = (
 }) => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [fixingId, setFixingId] = useState<string | null>(null);
+  const [showPillarDetails, setShowPillarDetails] = useState(false);
 
   if (!isOpen) return null;
 
@@ -110,120 +113,56 @@ export const ArchitectureAuditDrawer: React.FC<ArchitectureAuditDrawerProps> = (
           </p>
         </div>
       ) : auditResult ? (
-        <div className="flex-1 overflow-y-auto flex flex-col">
-          {/* Nominal Status & Score Banner */}
-          <div className="p-4 border-b border-slate-100 bg-white space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Nominal Architecture Baseline
-                </span>
-                <div className="mt-1">
-                  <span
-                    className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-bold border ${getStatusBadgeColor(
-                      auditResult.nominalStatus
-                    )}`}
-                  >
-                    {auditResult.nominalStatus || 'Evaluation Complete'}
-                  </span>
-                </div>
-              </div>
-
+        <>
+          {/* Compact Pinned Baseline & Score Strip */}
+          <div className="px-3.5 py-2.5 border-b border-slate-100 bg-white flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
               {/* Numerical Score */}
               <div
-                className={`w-14 h-14 rounded-xl border-2 flex flex-col items-center justify-center font-black text-xl shadow-xs ${getScoreColor(
+                className={`px-2 py-0.5 rounded-lg border-2 flex items-center gap-0.5 font-black text-sm shadow-2xs shrink-0 ${getScoreColor(
                   auditResult.overallScore
                 )}`}
               >
                 <span>{auditResult.overallScore}</span>
-                <span className="text-[8px] font-bold uppercase tracking-widest -mt-1 opacity-70">
+                <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">
                   /100
+                </span>
+              </div>
+
+              <div className="min-w-0 truncate">
+                <span
+                  className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border truncate max-w-[200px] ${getStatusBadgeColor(
+                    auditResult.nominalStatus
+                  )}`}
+                >
+                  {auditResult.nominalStatus || 'Evaluation Complete'}
                 </span>
               </div>
             </div>
 
-            <p className="text-[11px] leading-relaxed text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-              {auditResult.summary}
-            </p>
-
-            {/* 5-Pillar Score Breakdown */}
-            {pScores && (
-              <div className="pt-1 space-y-1.5 text-[10px]">
-                <div className="text-[9px] uppercase tracking-wider font-bold text-slate-400">
-                  Pillar Adherence:
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                    <div className="flex justify-between font-semibold text-slate-700">
-                      <span className="flex items-center gap-1">
-                        <ShieldAlert className="w-3 h-3 text-rose-500" /> Security:
-                      </span>
-                      <span>{pScores.security}%</span>
-                    </div>
-                    <div className="w-full bg-slate-200 h-1.5 rounded-full mt-1 overflow-hidden">
-                      <div
-                        className="bg-rose-500 h-full rounded-full transition-all"
-                        style={{ width: `${pScores.security}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                    <div className="flex justify-between font-semibold text-slate-700">
-                      <span className="flex items-center gap-1">
-                        <Activity className="w-3 h-3 text-amber-500" /> Reliability:
-                      </span>
-                      <span>{pScores.reliability}%</span>
-                    </div>
-                    <div className="w-full bg-slate-200 h-1.5 rounded-full mt-1 overflow-hidden">
-                      <div
-                        className="bg-amber-500 h-full rounded-full transition-all"
-                        style={{ width: `${pScores.reliability}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                    <div className="flex justify-between font-semibold text-slate-700">
-                      <span className="flex items-center gap-1">
-                        <Boxes className="w-3 h-3 text-indigo-500" /> SOLID:
-                      </span>
-                      <span>{pScores.solidPrinciples}%</span>
-                    </div>
-                    <div className="w-full bg-slate-200 h-1.5 rounded-full mt-1 overflow-hidden">
-                      <div
-                        className="bg-indigo-500 h-full rounded-full transition-all"
-                        style={{ width: `${pScores.solidPrinciples}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                    <div className="flex justify-between font-semibold text-slate-700">
-                      <span className="flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-emerald-500" /> Performance:
-                      </span>
-                      <span>{pScores.performance}%</span>
-                    </div>
-                    <div className="w-full bg-slate-200 h-1.5 rounded-full mt-1 overflow-hidden">
-                      <div
-                        className="bg-emerald-500 h-full rounded-full transition-all"
-                        style={{ width: `${pScores.performance}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Pillar Breakdown Toggle */}
+            <button
+              type="button"
+              onClick={() => setShowPillarDetails(!showPillarDetails)}
+              className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+            >
+              <span>{showPillarDetails ? 'Hide Details' : 'View Details'}</span>
+              {showPillarDetails ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
+            </button>
           </div>
 
-          {/* Categorical & Severity Filters */}
-          <div className="flex px-3 py-2 border-b border-slate-100 bg-slate-50/70 gap-1 text-[11px] overflow-x-auto scrollbar-none">
+          {/* Pinned Tab Bar: ALWAYS 100% VISIBLE WITHOUT ANY SCROLLING */}
+          <div className="flex px-3 py-2 border-b border-slate-200 bg-slate-50/90 backdrop-blur-xs gap-1.5 text-[11px] overflow-x-auto scrollbar-none shrink-0 shadow-2xs">
             {[
               { id: 'all', label: `All (${findings.length})` },
               {
                 id: 'critical',
                 label: `Critical (${findings.filter((f) => f.severity === 'critical').length})`,
+                isCritical: findings.filter((f) => f.severity === 'critical').length > 0,
               },
               { id: 'security', label: 'Security' },
               { id: 'reliability', label: 'Reliability & DLQ' },
@@ -234,16 +173,98 @@ export const ArchitectureAuditDrawer: React.FC<ArchitectureAuditDrawerProps> = (
               <button
                 key={cat.id}
                 onClick={() => setFilterCategory(cat.id)}
-                className={`px-2 py-0.5 rounded capitalize font-semibold whitespace-nowrap transition-colors ${
+                className={`px-2.5 py-1 rounded-md capitalize font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   filterCategory === cat.id
-                    ? 'bg-slate-800 text-white'
-                    : 'text-slate-600 hover:bg-slate-200'
+                    ? 'bg-slate-800 text-white shadow-xs'
+                    : cat.isCritical
+                    ? 'text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200'
+                    : 'text-slate-600 hover:bg-slate-200/80 bg-white border border-slate-200/60'
                 }`}
               >
                 {cat.label}
               </button>
             ))}
           </div>
+
+          {/* Scrollable Content Body */}
+          <div className="flex-1 overflow-y-auto flex flex-col">
+            {/* Collapsible Architecture Summary & Pillar Scores */}
+            {showPillarDetails && (
+              <div className="p-3.5 border-b border-slate-100 bg-slate-50/50 space-y-3 animate-in fade-in duration-150">
+                <p className="text-[11px] leading-relaxed text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-2xs">
+                  {auditResult.summary}
+                </p>
+
+                {pScores && (
+                  <div className="space-y-1.5 text-[10px]">
+                    <div className="text-[9px] uppercase tracking-wider font-bold text-slate-400">
+                      Pillar Adherence:
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-white p-2 rounded-lg border border-slate-100 shadow-2xs">
+                        <div className="flex justify-between font-semibold text-slate-700">
+                          <span className="flex items-center gap-1">
+                            <ShieldAlert className="w-3 h-3 text-rose-500" /> Security:
+                          </span>
+                          <span>{pScores.security}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-1.5 rounded-full mt-1 overflow-hidden">
+                          <div
+                            className="bg-rose-500 h-full rounded-full transition-all"
+                            style={{ width: `${pScores.security}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-2 rounded-lg border border-slate-100 shadow-2xs">
+                        <div className="flex justify-between font-semibold text-slate-700">
+                          <span className="flex items-center gap-1">
+                            <Activity className="w-3 h-3 text-amber-500" /> Reliability:
+                          </span>
+                          <span>{pScores.reliability}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-1.5 rounded-full mt-1 overflow-hidden">
+                          <div
+                            className="bg-amber-500 h-full rounded-full transition-all"
+                            style={{ width: `${pScores.reliability}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-2 rounded-lg border border-slate-100 shadow-2xs">
+                        <div className="flex justify-between font-semibold text-slate-700">
+                          <span className="flex items-center gap-1">
+                            <Boxes className="w-3 h-3 text-indigo-500" /> SOLID:
+                          </span>
+                          <span>{pScores.solidPrinciples}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-1.5 rounded-full mt-1 overflow-hidden">
+                          <div
+                            className="bg-indigo-500 h-full rounded-full transition-all"
+                            style={{ width: `${pScores.solidPrinciples}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-2 rounded-lg border border-slate-100 shadow-2xs">
+                        <div className="flex justify-between font-semibold text-slate-700">
+                          <span className="flex items-center gap-1">
+                            <Zap className="w-3 h-3 text-emerald-500" /> Performance:
+                          </span>
+                          <span>{pScores.performance}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-1.5 rounded-full mt-1 overflow-hidden">
+                          <div
+                            className="bg-emerald-500 h-full rounded-full transition-all"
+                            style={{ width: `${pScores.performance}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
           {/* Findings List */}
           <div className="p-3 space-y-3 flex-1">
@@ -372,6 +393,7 @@ export const ArchitectureAuditDrawer: React.FC<ArchitectureAuditDrawerProps> = (
             )}
           </div>
         </div>
+      </>
       ) : (
         <div className="flex-1 p-6 text-center text-xs text-slate-400 flex items-center justify-center">
           Click &quot;Audit&quot; in the top bar to inspect your architecture.
