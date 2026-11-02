@@ -140,9 +140,10 @@ export async function analyzeDiagramImage(
               generationConfig: {
                 temperature: 0.1,
                 responseMimeType: 'application/json',
+                maxOutputTokens: 8192,
               },
             }),
-            signal: AbortSignal.timeout(12000), // Max 12s per model: prevents infinite buffering
+            signal: AbortSignal.timeout(60000), // Generous 60s timeout for large complex architectures
           }
         );
 
@@ -197,16 +198,12 @@ export async function analyzeDiagramImage(
     }
 
     console.warn('All Gemini Vision models failed or timed out:', lastError);
+    if (lastError) {
+      throw new Error(`Vision AI extraction failed: ${lastError}`);
+    }
   }
 
-  // Graceful deterministic fallback
-  const fallback = synthesizeFromImageFallback(fileName);
-  return {
-    diagram: fallback,
-    source: 'fallback',
-    message: 'Generated baseline diagram from image structure (API offline or timed out).',
-    fromCache: false,
-  };
+  throw new Error('No API key provided or Gemini Vision service unavailable.');
 }
 
 async function fileToBase64(file: File): Promise<string> {
@@ -222,20 +219,4 @@ async function fileToBase64(file: File): Promise<string> {
   });
 }
 
-function synthesizeFromImageFallback(fileName: string): ExtractedDiagram {
-  const baseTitle = fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-  return {
-    title: baseTitle || 'Extracted Architecture Diagram',
-    nodes: [
-      { id: 'node_1', label: 'Client / Ingress', shape: 'actor', x: 80, y: 140, width: 100, height: 110, fillColor: '#F8FAFC', strokeColor: '#475569' },
-      { id: 'node_2', label: 'API Gateway', shape: 'rounded', x: 340, y: 160, width: 150, height: 60, fillColor: '#D5E8D4', strokeColor: '#82B366' },
-      { id: 'node_3', label: 'Core Microservice', shape: 'rectangle', x: 640, y: 160, width: 160, height: 65, fillColor: '#DAE8FC', strokeColor: '#6C8EBF' },
-      { id: 'node_4', label: 'External Cloud Provider', shape: 'cloud', x: 940, y: 150, width: 160, height: 75, fillColor: '#FFE6CC', strokeColor: '#D79B00' },
-    ],
-    edges: [
-      { id: 'edge_1', source: 'node_1', target: 'node_2', label: 'HTTPS', style: 'orthogonal' },
-      { id: 'edge_2', source: 'node_2', target: 'node_3', label: 'gRPC', style: 'orthogonal' },
-      { id: 'edge_3', source: 'node_3', target: 'node_4', label: 'standard communication', style: 'orthogonal' },
-    ],
-  };
-}
+

@@ -115,8 +115,9 @@ export async function modifyDiagramWithCopilot(
             generationConfig: {
               temperature: 0.1,
               responseMimeType: 'application/json',
+              maxOutputTokens: 8192,
             },
-            signal: AbortSignal.timeout(12000),
+            signal: AbortSignal.timeout(60000),
           }),
         }
       );

@@ -64,6 +64,7 @@ export const ImageToDiagramModal: React.FC<ImageToDiagramModalProps> = ({
 
   const [status, setStatus] = useState<'idle' | 'analyzing' | 'success' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
+  const [elapsedSecs, setElapsedSecs] = useState(0);
   const [generatedDiagram, setGeneratedDiagram] = useState<ExtractedDiagram | null>(null);
   const [generatedXml, setGeneratedXml] = useState<string>('');
   const [xmlPreviewOpen, setXmlPreviewOpen] = useState(false);
@@ -194,7 +195,12 @@ export const ImageToDiagramModal: React.FC<ImageToDiagramModalProps> = ({
     if (!selectedImage) return;
 
     setStatus('analyzing');
-    setStatusMessage(forceBypassCache ? 'Re-analyzing image with Gemini Vision AI...' : 'Analyzing diagram layout, shapes, text, and connectors...');
+    setElapsedSecs(0);
+    setStatusMessage(forceBypassCache ? 'Re-analyzing image with Gemini Vision AI...' : 'Analyzing full diagram layout, shapes, text, and connectors...');
+
+    const timer = setInterval(() => {
+      setElapsedSecs((s) => s + 1);
+    }, 1000);
 
     try {
       let diagram: ExtractedDiagram;
@@ -203,7 +209,7 @@ export const ImageToDiagramModal: React.FC<ImageToDiagramModalProps> = ({
         const result = await analyzeDiagramImage(selectedImage.file, apiKey, forceBypassCache);
         diagram = result.diagram;
         setIsFromCache(result.fromCache || false);
-        setStatusMessage(result.message || 'Diagram structure extracted!');
+        setStatusMessage(result.message || `Extracted full architecture (${diagram.nodes.length} Shapes, ${diagram.edges.length} Connectors)!`);
         if (result.rawXml) {
           setGeneratedXml(result.rawXml);
         } else {
@@ -223,6 +229,8 @@ export const ImageToDiagramModal: React.FC<ImageToDiagramModalProps> = ({
       console.error(err);
       setStatus('error');
       setStatusMessage(err instanceof Error ? err.message : 'Failed to analyze image');
+    } finally {
+      clearInterval(timer);
     }
   };
 
@@ -568,7 +576,7 @@ export const ImageToDiagramModal: React.FC<ImageToDiagramModalProps> = ({
           {/* Status Message */}
           {status !== 'idle' && (
             <div
-              className={`p-3.5 rounded-xl text-xs flex items-center gap-3 ${
+              className={`p-4 rounded-xl text-xs flex flex-col gap-2 ${
                 status === 'analyzing'
                   ? 'bg-amber-50 text-amber-900 border border-amber-200'
                   : status === 'success'
@@ -576,16 +584,35 @@ export const ImageToDiagramModal: React.FC<ImageToDiagramModalProps> = ({
                   : 'bg-rose-50 text-rose-900 border border-rose-200'
               }`}
             >
-              {status === 'analyzing' && (
-                <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              {status === 'analyzing' ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between font-semibold">
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                      <span>{statusMessage}</span>
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-amber-200/70 font-mono text-amber-900 font-bold">
+                      {elapsedSecs}s elapsed
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-amber-200/60 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500 rounded-full animate-pulse w-full" />
+                  </div>
+                  <p className="text-[11px] text-amber-700">
+                    Extracting complete architecture topology without quitting early. Larger diagrams with 30+ services may take 5–15 seconds.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  {status === 'success' && (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  )}
+                  {status === 'error' && (
+                    <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                  )}
+                  <div className="flex-1 font-medium">{statusMessage}</div>
+                </div>
               )}
-              {status === 'success' && (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              )}
-              {status === 'error' && (
-                <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-              )}
-              <div className="flex-1 font-medium">{statusMessage}</div>
             </div>
           )}
 
