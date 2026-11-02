@@ -14,10 +14,11 @@ Welcome to the comprehensive technical documentation for **`vish.al` Intelligent
 3. [Elaborated Menu Suite & Snapshots](#3-elaborated-menu-suite--snapshots)
    - [3.1 Group 1: AI Architecture Suite](#31-group-1-ai-architecture-suite)
    - [3.2 Group 2: Align & Flow (Canvas Layout & Motion)](#32-group-2-align--flow-canvas-layout--motion)
-   - [3.3 Group 3: Security & Resilience (Zero-Trust & Chaos)](#33-group-3-security--resilience-zero-trust--chaos)
-   - [3.4 Group 4: IaC & Technical Documentation](#34-group-4-iac--technical-documentation)
-   - [3.5 Group 5: Miscellaneous (FinOps, Latency/SLA, ERD, Presentation)](#35-group-5-miscellaneous-finops-latencysla-erd-presentation)
-   - [3.6 Group 6: Save & Export (Drawio, PNG, SVG, Interactive HTML)](#36-group-6-save--export-drawio-png-svg-interactive-html)
+   - [3.3 Group 3: Icon Beautify (Cloud Stencils & Web Brand Logos)](#33-group-3-icon-beautify-cloud-stencils--web-brand-logos)
+   - [3.4 Group 4: Security & Resilience (Zero-Trust & Chaos)](#34-group-4-security--resilience-zero-trust--chaos)
+   - [3.5 Group 5: IaC & Technical Documentation](#35-group-5-iac--technical-documentation)
+   - [3.6 Group 6: Miscellaneous (FinOps, Latency/SLA, ERD, Presentation)](#36-group-6-miscellaneous-finops-latencysla-erd-presentation)
+   - [3.7 Group 7: Save & Export (Drawio, PNG, SVG, Interactive HTML)](#37-group-7-save--export-drawio-png-svg-interactive-html)
 4. [Deep-Dive Feature Modals & Engines](#4-deep-dive-feature-modals--engines)
    - [4.1 Latency, SLA & Availability Calculator](#41-latency-sla--availability-calculator)
    - [4.2 Cloud Cost & FinOps Estimator](#42-cloud-cost--finops-estimator)
@@ -27,6 +28,10 @@ Welcome to the comprehensive technical documentation for **`vish.al` Intelligent
    - [4.6 Database SQL / Prisma to ERD](#46-database-sql--prisma-to-erd)
    - [4.7 Reverse IaC Engine](#47-reverse-iac-engine)
    - [4.8 Architecture to AI Prompt Engine (Reverse Engineering)](#48-architecture-to-ai-prompt-engine-reverse-engineering)
+   - [4.9 Icon Beautifier & Web-Augmented Brand Logo Engine](#49-icon-beautifier--web-augmented-brand-logo-engine)
+   - [4.10 Deterministic Layout Beautifier & Obstacle Avoidance Routing](#410-deterministic-layout-beautifier--obstacle-avoidance-routing)
+   - [4.11 Conversational Diagram Copilot & Directional Grammar](#411-conversational-diagram-copilot--directional-grammar)
+   - [4.12 UI & UX Ergonomics (Pinned Drawer Tabs & Responsive Chaos Controls)](#412-ui--ux-ergonomics-pinned-drawer-tabs--responsive-chaos-controls)
 5. [Architecture & Communication Flow](#5-architecture--communication-flow)
 
 ---
@@ -88,21 +93,29 @@ The original Draw.io menus (`File`, `Edit`, `View`, `Arrange`, `Extras`, `Help`)
 ### 3.2 Group 2: Align & Flow (Canvas Layout & Motion)
 ![Align & Flow Menu](screenshots/03_align_flow_menu.png)
 
-- **Auto-Align & Beautify:** Algorithmically adjusts node spacing, aligns peer services along horizontal/vertical grids, and removes overlapping connector paths.
+- **Auto-Align & Beautify:** Algorithmically adjusts node spacing, aligns peer services along horizontal/vertical grids, and removes overlapping connector paths with obstacle avoidance routing.
 - **Simulate Traffic Flow:** Injects animated SVG pulse strokes along connector paths to visualize live simulated HTTP/gRPC request flows across the system.
 
 ---
 
-### 3.3 Group 3: Security & Resilience (Zero-Trust & Chaos)
-![Security Menu](screenshots/04_security_menu.png)
+### 3.3 Group 3: Icon Beautify (Cloud Stencils & Web Brand Logos)
 
-- **Security & SOLID Audit:** Scans diagram nodes and edges against Zero-Trust network rules, unencrypted database boundaries, and single points of failure (SPOF).
-- **STRIDE Threat Model:** Analyzes components against Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, and Elevation of Privilege.
-- **Chaos Simulator (Blast Radius):** Simulates component outages (e.g., database failure) and highlights cascading impact paths across the diagram.
+- **✨ Instant Auto-Beautify:** 1-click batch upgrade replacing generic rectangle and cylinder shapes with official AWS, GCP, Azure, Kubernetes, and database stencil icons while preserving 100% of arrows and coordinates.
+- **🔍 Preview & Select Icons Modal:** Interactive dialog showing detected components, categorized by provider with live logo preview thumbnails, select/deselect toggles, and search filters.
+- **🌐 AI Web Brand Search:** Grounded search leveraging Gemini and Google High-Res Favicon CDN to recognize proprietary SaaS, streaming services (Conviva, Bitmovin, Axinom, DAZN), and third-party developer platforms.
 
 ---
 
-### 3.4 Group 4: IaC & Technical Documentation
+### 3.4 Group 4: Security & Resilience (Zero-Trust & Chaos)
+![Security Menu](screenshots/04_security_menu.png)
+
+- **Security & SOLID Audit:** Scans diagram nodes and edges against Zero-Trust network rules, unencrypted database boundaries, and single points of failure (SPOF) with pinned filter tabs.
+- **STRIDE Threat Model:** Analyzes components against Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, and Elevation of Privilege.
+- **Chaos Simulator (Blast Radius):** Simulates component outages (e.g., database failure) and highlights cascading impact paths across the diagram with a floating, draggable control bar.
+
+---
+
+### 3.5 Group 5: IaC & Technical Documentation
 ![IaC & Docs Menu](screenshots/05_iac_docs_menu.png)
 
 - **Import IaC:** Reverses Terraform HCL, Docker Compose YAML, and Kubernetes manifests into visual cloud topology diagrams.
@@ -111,7 +124,7 @@ The original Draw.io menus (`File`, `Edit`, `View`, `Arrange`, `Extras`, `Help`)
 
 ---
 
-### 3.5 Group 5: Miscellaneous (FinOps, Latency/SLA, ERD, Presentation)
+### 3.6 Group 6: Miscellaneous (FinOps, Latency/SLA, ERD, Presentation)
 ![Miscellaneous Menu](screenshots/06_misc_menu.png)
 
 - **Cloud Cost & FinOps:** Analyzes components to calculate estimated monthly run rates across AWS, GCP, and Azure with FinOps savings opportunities.
@@ -123,7 +136,7 @@ The original Draw.io menus (`File`, `Edit`, `View`, `Arrange`, `Extras`, `Help`)
 
 ---
 
-### 3.6 Group 6: Save & Export (Drawio, PNG, SVG, Interactive HTML)
+### 3.7 Group 7: Save & Export (Drawio, PNG, SVG, Interactive HTML)
 ![Export Menu](screenshots/07_export_menu.png)
 
 - **Save Diagram (.drawio):** Native XML format compatible with any Draw.io instance.
@@ -220,6 +233,65 @@ Maps architectural assets to the Microsoft STRIDE framework:
 - **RFC Technical Specification:** Automatically generates a comprehensive Markdown specification containing Component Inventory, Interaction Matrix Table, and non-functional requirements.
 - **Mermaid Export:** Generates clean, ready-to-use Mermaid.js flowchart code (`flowchart LR` or `flowchart TD`).
 - **1-Click "Test & Re-Synthesize":** Allows engineers to immediately verify the prompt's reproducibility by re-generating and rendering the architecture directly on canvas.
+
+---
+
+### 4.9 Icon Beautifier & Web-Augmented Brand Logo Engine
+The Icon Beautifier upgrades generic diagrams into polished, production-grade cloud architecture blueprints by replacing standard rectangle and cylinder boxes with official cloud and tech vendor stencils.
+
+```mermaid
+flowchart TD
+    Node["Diagram Node (e.g., 'Users DB (PostgreSQL)', 'Conviva')"] --> T1{"Tier 1: Local Catalog?"}
+    T1 -- Yes --> S1["Official Cloud Stencil (AWS, GCP, Azure, DB)"]
+    T1 -- No --> T2{"Tier 2: SimpleIcons Slug?"}
+    T2 -- Yes --> S2["SimpleIcons Vector SVG CDN (3,000+ Tools)"]
+    T2 -- No --> T3{"Tier 3: AI Web Search"}
+    T3 --> S3["Gemini Vendor Discovery + Google Favicon CDN (128px)"]
+    
+    S1 --> Apply["Beautify Engine: Preserve Center (x, y) & 100% Arrows"]
+    S2 --> Apply
+    S3 --> Apply
+```
+
+- **3-Tier Brand Resolution Engine:**
+  1. **Tier 1 (Official Cloud Stencils):** Local regex definitions for standard AWS services (S3, RDS, Lambda, DynamoDB, API Gateway, SQS, CloudFront, Service/Data Catalog), GCP, Azure, Kubernetes, and Web Clients.
+  2. **Tier 2 (Vector Tech Stacks via SimpleIcons):** 3,000+ developer and infrastructure tool SVGs including PostgreSQL, Redis, Apache Kafka, Docker, MongoDB, Snowflake, Datadog, Stripe, Auth0, Twilio, and Cloudflare.
+  3. **Tier 3 (AI + Web Search Grounding via Gemini & Google High-Res Favicon CDN):** Dynamically identifies specialized B2B software vendors, OTT media streaming stacks (e.g. Conviva, Bitmovin, Axinom, DAZN), and SaaS platforms, fetching crisp 128px official logos (`https://t2.gstatic.com/faviconV2?url=...&size=128`).
+- **Zero Data Loss & Strict Docking Guarantee:**
+  - **100% of arrows and waypoints remain untouched:** Edge sources, targets, intermediate waypoints, and orthogonal styles are never altered.
+  - **Center coordinate anchoring:** New stencil geometries are centered over the original bounding box:
+    $$\text{newX} = \text{centerX} - \frac{\text{targetW}}{2}, \quad \text{newY} = \text{centerY} - \frac{\text{targetH}}{2}$$
+  - **Unmatched safety:** Nodes that cannot be identified, flow decision diamonds, and container boundaries are left as-is without modification.
+- **Interactive Preview & Web Search Modal:**
+  - View live logo previews before applying changes.
+  - Filter by provider (AWS, GCP, Azure, Database, DevOps, SaaS, Web).
+  - One-click `🌐 Search Web Logos` to scan for brand logos across the web on demand.
+
+---
+
+### 4.10 Deterministic Layout Beautifier & Obstacle Avoidance Routing
+Provides clean, consistent canvas layouts with mathematical collision prevention and routing guarantees:
+- **Acyclic Graph Ranking & Infinite Loop Prevention:** Automatically handles bidirectional loops and circular dependencies by constructing an acyclic spanning tree for hierarchical tier assignment, preventing browser freezes.
+- **Obstacle Avoidance Gutters:** Edge connectors are routed around intermediate node bodies, eliminating ugly lines cutting straight through text and shape interiors.
+- **Perimeter Edge Docking:** Connectors dock cleanly at cardinal border points (top, bottom, left, right) rather than converging at internal node origins.
+- **DOM Layer Ordering:** Connectors are serialized underneath vertex shapes in the mxGraph XML tree, ensuring node labels and icons are never obstructed.
+
+---
+
+### 4.11 Conversational Diagram Copilot & Directional Grammar
+The Conversational Copilot translates natural language instructions into precise Draw.io canvas edits:
+- **Fuzzy Anchor Resolution:** Queries like `"Add Catalog to display Error..."` automatically fuzzy-match the target node `"Display Error & Increment Attempts"`, avoiding failed lookups due to partial names.
+- **Natural Language Directional Grammar:** 
+  - Resolves semantic prepositions: phrases like `"Add Web to User Enters Credentials"` correctly detect that `"to"` signifies an upstream addition, placing the new `"Web"` node to the left/upstream and pointing the arrow `Web ➔ User Enters Credentials`.
+  - Conversely, phrases with `"from"`, `"after"`, or `"right of"` position downstream and point `Anchor ➔ New`.
+- **Direction Inversion:** Built-in command `"reverse arrow between [A] and [B]"` to flip arrowheads without redrawing connections.
+- **Full Action Suite:** Insert, connect, rename, move, delete, and replace nodes conversationally.
+
+---
+
+### 4.12 UI & UX Ergonomics (Pinned Drawer Tabs & Responsive Chaos Controls)
+- **Security & SOLID Audit Drawer:** Redesigned with sticky, pinned category tabs (`Critical`, `Security`, `Reliability & DLQ`, `SOLID`, `Performance`) at the top of the findings pane, ensuring category filters remain visible and accessible at all times regardless of scroll depth.
+- **Responsive Chaos Simulator Bar:** The floating Chaos Engineering control bar is clamped to a maximum width (`max-w-xl`), prevents stretching on wide displays, features drag-and-drop repositioning, and filters out container/boundary groupings from target selection dropdowns.
 
 ---
 

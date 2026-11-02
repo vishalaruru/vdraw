@@ -61,6 +61,7 @@ Traditional diagramming tools like standard Draw.io, Visio, or Lucidchart treat 
 | **Live Request Traffic Flow Simulation** | ❌ | ❌ | ❌ | **✅ Animated SVG Pulses** |
 | **Code to Diagram (Reverse Terraform / K8s)** | ❌ | ❌ | ❌ | **✅ Native Parser** |
 | **Database SQL / Prisma to ERD** | ❌ | ⚠️ (Manual import) | ❌ | **✅ Instant DDL/Prisma** |
+| **Official Cloud & Web Icon Beautifier** | ❌ | ⚠️ (Manual drag) | ⚠️ (Vendor-locked) | **✅ 3-Tier AI + Stencils** |
 | **Zero-Dependency Standalone HTML Export** | ❌ | ❌ | ❌ | **✅ Offline Single-File** |
 | **Draw.io Native Menus & File Format** | ✅ | ❌ | ❌ | **✅ 100% Preserved** |
 
@@ -127,6 +128,17 @@ Know your cloud bill before provisioning a single server.
   <img src="docs/screenshots/14_sql_erd_modal.png" width="48%" style="border-radius: 8px;" />
   <img src="docs/screenshots/15_iac_reverse_modal.png" width="48%" style="border-radius: 8px;" />
 </p>
+
+---
+
+### 6. ✨ Cloud Stencil & Web Brand Icon Beautifier
+Turn generic boxes into official cloud and vendor architectures with zero arrow disruption:
+- **3-Tier Icon Recognition:**
+  1. **Official Cloud Stencils:** AWS (S3, RDS, Lambda, DynamoDB, API Gateway, SQS, CloudFront, Catalog, etc.), GCP, Azure, K8s, and Web Clients.
+  2. **Vector Tech Stacks (SimpleIcons):** 3,000+ developer tools (PostgreSQL, Redis, Kafka, Docker, MongoDB, Snowflake, Datadog, Stripe, Auth0, etc.).
+  3. **AI Web Brand Discovery (Google Favicon CDN):** Recognizes specialized B2B software vendors and media streaming stacks (Conviva, Bitmovin, Axinom, DAZN) and pulls high-res 128px brand logos.
+- **Zero Data Loss Guarantee:** 100% of arrows, orthogonal routes, and cell dockings remain completely untouched; coordinates are center-anchored (`newX = centerX - newW/2`).
+- **Interactive Preview & Select Modal:** Toggle individual components, search/filter by provider, and trigger on-demand web logo discovery.
 
 ---
 
