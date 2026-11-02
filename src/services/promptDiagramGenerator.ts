@@ -39,6 +39,7 @@ Your job is to convert natural language architectural descriptions, flowcharts, 
    - All connectors must use 'orthogonal' routing.
 
 8. VISUAL ARCHETYPES:
+   - "container" for System Boundaries, Regions, Tiers, VPCs, App Enclosures (e.g. EU Central 1, BACKEND SERVICES, Global Routing, DAZN APP). Coordinate width and height must enclose constituent services.
    - "actor" for Users, Mobile Clients, Web Browsers (width: 100, height: 110)
    - "rounded" for SDKs, API Gateways, Rails (width: 140-180, height: 35-60)
    - "rectangle" for Domain Services, APIs, Configs (width: 140-160, height: 60-65)
@@ -53,7 +54,7 @@ Output strictly valid JSON matching this schema:
     {
       "id": "node_1",
       "label": "Component Label",
-      "shape": "rectangle|rounded|cylinder|rhombus|cloud|actor",
+      "shape": "container|rectangle|rounded|cylinder|rhombus|cloud|actor",
       "x": 80,
       "y": 140,
       "width": 150,
@@ -68,7 +69,8 @@ Output strictly valid JSON matching this schema:
       "source": "node_1",
       "target": "node_2",
       "label": "Protocol or Action",
-      "style": "orthogonal"
+      "style": "orthogonal",
+      "dashed": true
     }
   ]
 }

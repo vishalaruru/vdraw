@@ -106,6 +106,8 @@ function getShapeStyle(shape: ShapeKind, theme: (typeof THEME_PALETTES)[ThemePre
       return `ellipse;shape=cloud;${base}fillColor=${theme.defaultFill};strokeColor=${theme.defaultStroke};fontColor=${theme.defaultFont};`;
     case 'document':
       return `shape=document;boundedLbl=1;${base}fillColor=${theme.defaultFill};strokeColor=${theme.defaultStroke};fontColor=${theme.defaultFont};`;
+    case 'container':
+      return `rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=14;spacingTop=10;fontStyle=1;fontSize=12;dashed=0;arcSize=4;strokeWidth=1.5;`;
     case 'rectangle':
     default:
       return `rounded=0;${base}fillColor=${theme.defaultFill};strokeColor=${theme.defaultStroke};fontColor=${theme.defaultFont};`;
@@ -126,31 +128,36 @@ export function synthesizeDrawioXml(
   cellsXml += '        <mxCell id="0" />\n';
   cellsXml += '        <mxCell id="1" parent="0" />\n';
 
-  // In draw.io mxGraphModel, standard practice is to define edge cells first or use perimeter connection constraints
-  // so edges dock at node boundaries rather than crossing over box centers.
-  const edgeBaseStyle = 'edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;';
+  // Partition nodes into background containers vs standard component vertices
+  const isContainer = (n: any) =>
+    n.shape === 'container' ||
+    (n.width && n.width >= 400 && n.height && n.height >= 200 && /central|backend|routing|app|vpc/i.test(n.label));
 
-  // Render edges
-  for (const edge of diagram.edges) {
-    let edgeStyle = edgeBaseStyle;
-    if (edge.style === 'curved') {
-      edgeStyle = 'edgeStyle=orthogonalEdgeStyle;curved=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;';
-    } else if (edge.style === 'straight') {
-      edgeStyle = 'orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;';
-    }
+  const containerNodes = diagram.nodes.filter(isContainer);
+  const regularNodes = diagram.nodes.filter((n) => !isContainer(n));
 
-    edgeStyle += `strokeColor=${theme.edgeStroke};strokeWidth=1.5;fontColor=${theme.edgeFont};`;
-    if (edge.dashed) edgeStyle += 'dashed=1;';
+  // 1. Render Containers FIRST so they act as background grouping panels
+  for (const node of containerNodes) {
+    const rawStyle = getShapeStyle('container', theme);
+    let finalStyle = rawStyle;
+    if (node.fillColor) finalStyle += `fillColor=${node.fillColor};`;
+    if (node.strokeColor) finalStyle += `strokeColor=${node.strokeColor};`;
+    if (node.fontColor) finalStyle += `fontColor=${node.fontColor};`;
+    if (/routing|dashed/i.test(node.label)) finalStyle += `dashed=1;`;
 
-    const escapedEdgeLabel = escapeXml(edge.label || '');
+    const escapedLabel = escapeXml(node.label || '');
+    const width = Math.max(node.width || 400, 100);
+    const height = Math.max(node.height || 200, 100);
+    const x = Math.round(node.x);
+    const y = Math.round(node.y);
 
-    cellsXml += `        <mxCell id="${escapeXml(edge.id)}" value="${escapedEdgeLabel}" style="${edgeStyle}" edge="1" parent="1" source="${escapeXml(edge.source)}" target="${escapeXml(edge.target)}">\n`;
-    cellsXml += `          <mxGeometry relative="1" as="geometry" />\n`;
+    cellsXml += `        <mxCell id="${escapeXml(node.id)}" value="${escapedLabel}" style="${finalStyle}" vertex="1" parent="1">\n`;
+    cellsXml += `          <mxGeometry x="${x}" y="${y}" width="${width}" height="${height}" as="geometry" />\n`;
     cellsXml += `        </mxCell>\n`;
   }
 
-  // Render nodes (rendered after or with perimeter points so boxes sit on top of connection lines cleanly)
-  for (const node of diagram.nodes) {
+  // 2. Render Regular Component Nodes
+  for (const node of regularNodes) {
     const rawStyle = getShapeStyle(node.shape, theme);
     let finalStyle = rawStyle;
     if (node.fillColor) finalStyle += `fillColor=${node.fillColor};`;
@@ -158,13 +165,37 @@ export function synthesizeDrawioXml(
     if (node.fontColor) finalStyle += `fontColor=${node.fontColor};`;
 
     const escapedLabel = escapeXml(node.label || '');
-    const width = Math.max(node.width || 140, 80);
-    const height = Math.max(node.height || 60, 40);
+    const width = Math.max(node.width || 140, 40);
+    const height = Math.max(node.height || 60, 30);
     const x = Math.round(node.x);
     const y = Math.round(node.y);
 
     cellsXml += `        <mxCell id="${escapeXml(node.id)}" value="${escapedLabel}" style="${finalStyle}" vertex="1" parent="1">\n`;
     cellsXml += `          <mxGeometry x="${x}" y="${y}" width="${width}" height="${height}" as="geometry" />\n`;
+    cellsXml += `        </mxCell>\n`;
+  }
+
+  // 3. Render Edges (with dashed support and label background)
+  const edgeBaseStyle =
+    'edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;';
+
+  for (const edge of diagram.edges) {
+    let edgeStyle = edgeBaseStyle;
+    if (edge.style === 'curved') {
+      edgeStyle =
+        'edgeStyle=orthogonalEdgeStyle;curved=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;';
+    } else if (edge.style === 'straight') {
+      edgeStyle = 'orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;';
+    }
+
+    edgeStyle += `strokeColor=${edge.strokeColor || theme.edgeStroke};strokeWidth=1.5;fontColor=${theme.edgeFont};`;
+    if (edge.dashed) edgeStyle += 'dashed=1;';
+    if (edge.label) edgeStyle += 'labelBackgroundColor=#ffffff;';
+
+    const escapedEdgeLabel = escapeXml(edge.label || '');
+
+    cellsXml += `        <mxCell id="${escapeXml(edge.id)}" value="${escapedEdgeLabel}" style="${edgeStyle}" edge="1" parent="1" source="${escapeXml(edge.source)}" target="${escapeXml(edge.target)}">\n`;
+    cellsXml += `          <mxGeometry relative="1" as="geometry" />\n`;
     cellsXml += `        </mxCell>\n`;
   }
 

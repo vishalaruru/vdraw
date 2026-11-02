@@ -1,5 +1,6 @@
 import { ExtractedDiagram } from '../types/diagram';
 import { DAZN_ARCHITECTURE_DIAGRAM } from './daznExtracted';
+import { BLUE_SWAN_ARCHITECTURE_DIAGRAM } from './blueSwanExtracted';
 
 export interface SampleFlowchartItem {
   id: string;
@@ -10,6 +11,46 @@ export interface SampleFlowchartItem {
 }
 
 export const SAMPLE_FLOWCHARTS: SampleFlowchartItem[] = [
+  {
+    id: 'blue-swan-architecture',
+    name: 'Blue Swan - Acquisition to Player Workflow (Full Architecture with Containers)',
+    description: 'EU Central 1, Backend Services, Transcoding Highway, DRM Proxy, Global Routing, DAZN App & Telemetry.',
+    diagram: BLUE_SWAN_ARCHITECTURE_DIAGRAM,
+    previewSvg: `<svg viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg" style="background:#f8fafc; border-radius:8px;">
+      <!-- Outer container EU Central 1 -->
+      <rect x="15" y="15" width="370" height="135" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="3,3"/>
+      <text x="25" y="28" font-family="sans-serif" font-size="8" font-weight="bold" fill="#334155">EU Central 1</text>
+      <!-- Backend Services container -->
+      <rect x="95" y="35" width="210" height="105" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="145" y="46" font-family="sans-serif" font-size="7" font-weight="bold" fill="#475569">BACKEND SERVICES</text>
+      <!-- Ingest Column -->
+      <rect x="25" y="45" width="45" height="18" rx="2" fill="#e1d5e7" stroke="#9673a6" stroke-width="1"/>
+      <text x="47" y="57" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#4a1d96">Ingest</text>
+      <!-- Backend Nodes -->
+      <rect x="105" y="55" width="40" height="16" rx="2" fill="#e1d5e7" stroke="#9673a6" stroke-width="1"/>
+      <text x="125" y="66" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#4a1d96">Playback</text>
+      <rect x="155" y="55" width="35" height="16" rx="2" fill="#e1d5e7" stroke="#9673a6" stroke-width="1"/>
+      <text x="172" y="66" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#4a1d96">Policies</text>
+      <rect x="200" y="55" width="45" height="16" rx="2" fill="#e1d5e7" stroke="#9673a6" stroke-width="1"/>
+      <text x="222" y="66" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#4a1d96">DRM Proxy</text>
+      <!-- Global Routing -->
+      <rect x="315" y="35" width="60" height="105" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+      <text x="345" y="45" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#475569">Global Routing</text>
+      <!-- Transcoding Highway -->
+      <rect x="75" y="195" width="35" height="18" rx="2" fill="#d5e8d4" stroke="#82b366" stroke-width="1"/>
+      <text x="92" y="207" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#14532d">ORCA</text>
+      <rect x="120" y="195" width="45" height="18" rx="2" fill="#d5e8d4" stroke="#82b366" stroke-width="1"/>
+      <text x="142" y="207" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#14532d">Bitmovin</text>
+      <rect x="175" y="195" width="45" height="18" rx="2" fill="#d5e8d4" stroke="#82b366" stroke-width="1"/>
+      <text x="197" y="207" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#14532d">Packager</text>
+      <!-- DAZN App -->
+      <rect x="290" y="180" width="85" height="45" rx="3" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+      <rect x="295" y="195" width="35" height="22" rx="2" fill="#fce7f3" stroke="#f43f5e" stroke-width="1"/>
+      <text x="312" y="209" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#9f1239">Frontend</text>
+      <rect x="335" y="195" width="35" height="22" rx="2" fill="#fce7f3" stroke="#f43f5e" stroke-width="1"/>
+      <text x="352" y="209" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#9f1239">Player</text>
+    </svg>`,
+  },
   {
     id: 'dazn-architecture',
     name: 'DAZN Ingestion & Platform Architecture (38 Components)',

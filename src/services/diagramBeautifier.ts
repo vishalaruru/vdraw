@@ -28,6 +28,7 @@ interface NodeCell {
   h: number;
   isRailOrBanner: boolean;
   isTallBracket: boolean;
+  isContainer: boolean;
 }
 
 interface EdgeCell {
@@ -63,13 +64,20 @@ function extractCellsFromDoc(doc: Document): { nodes: NodeCell[]; edges: EdgeCel
 
     const value = cell.getAttribute('value') || cell.getAttribute('label') || '';
     const cleanLabel = value.replace(/<[^>]*>/g, '').trim();
+    const style = cell.getAttribute('style') || '';
+
+    // Identify container boundary boxes
+    const isContainer =
+      style.includes('shape=container') ||
+      style.includes('verticalAlign=top') ||
+      (w >= 300 && h >= 160 && /central|backend|routing|app|vpc|zone|container|cluster/i.test(cleanLabel));
 
     // Identify wide banner / backbone bus (e.g. Dots Stream, Kafka bus)
-    const isRailOrBanner = w >= 450 || /stream|bus|kafka|backbone/i.test(cleanLabel);
+    const isRailOrBanner = !isContainer && (w >= 450 || /stream|bus|kafka|backbone/i.test(cleanLabel));
     // Identify tall vertical brackets (e.g. BFF, Gateway stack)
-    const isTallBracket = h >= 400;
+    const isTallBracket = !isContainer && h >= 400;
 
-    nodes.push({ cell, geo, id, label: cleanLabel, x, y, w, h, isRailOrBanner, isTallBracket });
+    nodes.push({ cell, geo, id, label: cleanLabel, x, y, w, h, isRailOrBanner, isTallBracket, isContainer });
   }
 
   const edgeElements = Array.from(doc.querySelectorAll('mxCell[edge="1"]'));
@@ -121,7 +129,7 @@ function commitNodeGeometries(nodes: NodeCell[]) {
  * GUARANTEE: Zero data loss. Preserves 100% of links and brings displaced nodes back to connected peers.
  */
 function applySmartBeautify(nodes: NodeCell[], edges: EdgeCell[]) {
-  const standardNodes = nodes.filter((n) => !n.isRailOrBanner && !n.isTallBracket);
+  const standardNodes = nodes.filter((n) => !n.isRailOrBanner && !n.isTallBracket && !n.isContainer);
   if (standardNodes.length === 0) return;
 
   // Step 0: Edge-Aware Peer Re-Anchoring
@@ -219,8 +227,8 @@ function applySmartBeautify(nodes: NodeCell[], edges: EdgeCell[]) {
     }
   }
 
-  // 4. Ensure Columns do not overlap horizontally (minimum 80px gap between column boundaries)
-  const MIN_COL_GAP_X = 80;
+  // 4. Ensure Columns do not overlap horizontally (minimum 60px gap between column boundaries)
+  const MIN_COL_GAP_X = 60;
   for (let c = 1; c < columns.length; c++) {
     const prevCol = columns[c - 1];
     const currCol = columns[c];
@@ -231,8 +239,11 @@ function applySmartBeautify(nodes: NodeCell[], edges: EdgeCell[]) {
     const requiredLeft = Math.round((prevColMaxRight + MIN_COL_GAP_X) / 20) * 20;
     if (currColMinLeft < requiredLeft) {
       const shiftX = requiredLeft - currColMinLeft;
-      for (const n of currCol) {
-        n.x += shiftX;
+      // Cascade shift across current and ALL subsequent columns to avoid chain collision
+      for (let k = c; k < columns.length; k++) {
+        for (const n of columns[k]) {
+          n.x += shiftX;
+        }
       }
     }
   }
@@ -251,7 +262,31 @@ function applySmartBeautify(nodes: NodeCell[], edges: EdgeCell[]) {
     }
   }
 
-  // 6. Global Bounding Box & Backbone Bus / Bracket Positioning
+  // 6. Enclose and wrap background Containers dynamically around their members
+  const containerNodes = nodes.filter((n) => n.isContainer);
+  for (const container of containerNodes) {
+    const memberNodes = standardNodes.filter(
+      (n) =>
+        n.x >= container.x - 60 &&
+        n.x + n.w <= container.x + container.w + 60 &&
+        n.y >= container.y - 60 &&
+        n.y + n.h <= container.y + container.h + 60
+    );
+
+    if (memberNodes.length > 0) {
+      const minX = Math.min(...memberNodes.map((n) => n.x));
+      const maxX = Math.max(...memberNodes.map((n) => n.x + n.w));
+      const minY = Math.min(...memberNodes.map((n) => n.y));
+      const maxY = Math.max(...memberNodes.map((n) => n.y + n.h));
+
+      container.x = Math.round((minX - 30) / 20) * 20;
+      container.y = Math.round((minY - 50) / 20) * 20; // 50px top padding for container header label
+      container.w = Math.round((maxX - minX + 60) / 20) * 20;
+      container.h = Math.round((maxY - minY + 80) / 20) * 20;
+    }
+  }
+
+  // 7. Global Bounding Box & Backbone Bus / Bracket Positioning
   const allStandardLeft = Math.min(...standardNodes.map((n) => n.x));
   const allStandardRight = Math.max(...standardNodes.map((n) => n.x + n.w));
   const allStandardMaxY = Math.max(...standardNodes.map((n) => n.y + n.h));
@@ -516,7 +551,9 @@ export async function beautifyDiagramXml(
   if (typeof DOMParser !== 'undefined') {
     try {
       const parser = new DOMParser();
-      const doc = parser.parseFromString(currentXml, 'text/xml');
+      // Auto-heal unescaped '&' characters into '&amp;' before XML parsing
+      const sanitizedXml = currentXml.replace(/&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g, '&amp;');
+      const doc = parser.parseFromString(sanitizedXml, 'text/xml');
 
       const parserError = doc.querySelector('parsererror');
       if (parserError) {

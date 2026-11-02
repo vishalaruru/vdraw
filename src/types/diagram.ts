@@ -7,6 +7,7 @@ export type ShapeKind =
   | 'parallelogram'
   | 'actor'
   | 'cloud'
+  | 'container'
   | 'document';
 
 export interface DiagramNode {
