@@ -184,13 +184,20 @@ export async function modifyDiagramWithCopilot(
         ExtractedDiagram & { explanation?: string }
       >(raw);
 
-      // Verify no existing nodes were accidentally dropped when adding
+      // Verify no existing nodes or edges were accidentally dropped when adding
       const lowerInstr = userInstruction.toLowerCase();
       if ((lowerInstr.includes('add') || lowerInstr.includes('insert')) && !lowerInstr.includes('remove') && !lowerInstr.includes('delete')) {
         const newLabels = new Set(parsed.nodes.map((n) => n.label.toLowerCase()));
         for (const oldNode of existingDiagram.nodes) {
           if (!newLabels.has(oldNode.label.toLowerCase())) {
             parsed.nodes.push(oldNode);
+          }
+        }
+
+        const existingEdgeSet = new Set(parsed.edges.map((e) => `${e.source}->${e.target}`));
+        for (const oldEdge of existingDiagram.edges) {
+          if (!existingEdgeSet.has(`${oldEdge.source}->${oldEdge.target}`)) {
+            parsed.edges.push(oldEdge);
           }
         }
       }
@@ -249,15 +256,83 @@ function applyLocalCopilotEdit(
   const edges: DiagramEdge[] = diagram.edges.map((e) => ({ ...e }));
   const instr = instruction.trim();
 
-  // Helper: Fuzzy find node by label
+  // Helper: Robust multi-tier fuzzy find node by label
   const findNode = (name: string): DiagramNode | undefined => {
-    const clean = name.toLowerCase().replace(/['"]/g, '').trim();
-    if (!clean) return undefined;
-    return (
-      nodes.find((n) => n.label.toLowerCase() === clean) ||
-      nodes.find((n) => n.label.toLowerCase().includes(clean)) ||
-      nodes.find((n) => clean.includes(n.label.toLowerCase()))
-    );
+    if (!name) return undefined;
+    const rawClean = name.toLowerCase().replace(/['"“”‘’]/g, '').trim();
+    // Strip trailing ellipsis (... or …), punctuation, and normalize whitespace
+    const searchClean = rawClean
+      .replace(/\.{2,}|…/g, ' ')
+      .replace(/[^\w\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!searchClean) return undefined;
+
+    // 1. Exact match on raw label
+    const exact = nodes.find((n) => n.label.toLowerCase().trim() === rawClean);
+    if (exact) return exact;
+
+    // 2. Exact match on normalized label
+    const exactClean = nodes.find((n) => {
+      const lClean = n.label
+        .toLowerCase()
+        .replace(/['"“”‘’]/g, '')
+        .replace(/[^\w\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return lClean === searchClean;
+    });
+    if (exactClean) return exactClean;
+
+    // 3. Substring match (either direction) with cleaned whitespace
+    const sub = nodes.find((n) => {
+      const lClean = n.label
+        .toLowerCase()
+        .replace(/[\r\n\t]+/g, ' ')
+        .replace(/['"“”‘’]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return lClean.includes(searchClean) || searchClean.includes(lClean);
+    });
+    if (sub) return sub;
+
+    // 4. Token overlap match (e.g. query "display Error ..." matches "Display Error & Increment Attempts")
+    const searchTokens = searchClean.split(/\s+/).filter((t) => t.length > 1);
+    if (searchTokens.length > 0) {
+      let bestNode: DiagramNode | undefined;
+      let maxMatchCount = 0;
+
+      for (const n of nodes) {
+        const lTokens = new Set(
+          n.label.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean)
+        );
+        let matches = 0;
+        for (const st of searchTokens) {
+          if (lTokens.has(st) || Array.from(lTokens).some((lt) => lt.startsWith(st) || st.startsWith(lt))) {
+            matches++;
+          }
+        }
+        if (matches === searchTokens.length && matches > maxMatchCount) {
+          bestNode = n;
+          maxMatchCount = matches;
+        }
+      }
+      if (bestNode) return bestNode;
+
+      // 5. Significant word prefix match (word length >= 3)
+      for (const n of nodes) {
+        const lTokens = new Set(
+          n.label.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean)
+        );
+        for (const st of searchTokens) {
+          if (st.length >= 3 && (lTokens.has(st) || Array.from(lTokens).some((lt) => lt.startsWith(st)))) {
+            return n;
+          }
+        }
+      }
+    }
+
+    return undefined;
   };
 
   // 1. Partial/Underspecified Command Guards with Helpful Suggestions
@@ -409,7 +484,7 @@ function applyLocalCopilotEdit(
   if (connectMatch) {
     const sName = connectMatch[1].trim();
     const tName = connectMatch[2].trim();
-    const edgeLabel = connectMatch[3]?.trim() || 'standard communication';
+    const edgeLabel = connectMatch[3]?.trim() || '';
 
     const sNode = findNode(sName);
     const tNode = findNode(tName);
@@ -423,39 +498,123 @@ function applyLocalCopilotEdit(
         style: 'orthogonal',
       });
 
+      const sLabel = sNode.label.replace(/[\r\n\t]+/g, ' ').trim();
+      const tLabel = tNode.label.replace(/[\r\n\t]+/g, ' ').trim();
+
       return {
         diagram: { ...diagram, nodes, edges },
         handled: true,
-        explanation: `Connected '${sNode.label}' ➔ '${tNode.label}' via "${edgeLabel}".`,
+        explanation: edgeLabel
+          ? `Connected '${sLabel}' ➔ '${tLabel}' via "${edgeLabel}".`
+          : `Connected '${sLabel}' ➔ '${tLabel}' with an arrow.`,
       };
     }
   }
 
-  // 8. INTENT: ADD / INSERT (e.g. "Add Redis cache", "Insert Config below MFL")
-  const addMatch = /(?:add|insert|create)\s+(?:a\s+|an\s+|node\s+)?['"]?(.+?)['"]?(?:\s+(below|above|after|before|to|in\s+front\s+of)\s+['"]?(.+?)['"]?)?$/i.exec(instr);
+  // 7.5. INTENT: INSERT BETWEEN (e.g. "Add Catalog between Ingest and CMS", "Insert Queue between Producer and Consumer")
+  const betweenMatch = /(?:add|insert|create)\s+(?:a\s+|an\s+|node\s+)?['"]?(.+?)['"]?\s+between\s+['"]?(.+?)['"]?\s+and\s+['"]?(.+?)['"]?$/i.exec(instr);
+  if (betweenMatch) {
+    const newNodeName = betweenMatch[1].trim().replace(/^['"]|['"]$/g, '');
+    const sourceName = betweenMatch[2].trim();
+    const targetName = betweenMatch[3].trim();
+
+    const sNode = findNode(sourceName);
+    const tNode = findNode(targetName);
+
+    if (sNode && tNode) {
+      const newNodeId = `node_${Date.now()}`;
+      const midX = Math.round((sNode.x + tNode.x) / 2);
+      const midY = Math.round((sNode.y + tNode.y) / 2);
+
+      const newNode: DiagramNode = {
+        id: newNodeId,
+        label: newNodeName,
+        shape: 'rectangle',
+        x: midX,
+        y: midY,
+        width: 150,
+        height: 65,
+        fillColor: '#DAE8FC',
+        strokeColor: '#6C8EBF',
+      };
+      nodes.push(newNode);
+
+      // Remove direct edge if exists
+      const directIdx = edges.findIndex(
+        (e) => (e.source === sNode.id && e.target === tNode.id) || (e.source === tNode.id && e.target === sNode.id)
+      );
+      if (directIdx >= 0) {
+        edges.splice(directIdx, 1);
+      }
+
+      edges.push({
+        id: `edge_${Date.now()}_1`,
+        source: sNode.id,
+        target: newNodeId,
+        label: '',
+        style: 'orthogonal',
+      });
+      edges.push({
+        id: `edge_${Date.now()}_2`,
+        source: newNodeId,
+        target: tNode.id,
+        label: '',
+        style: 'orthogonal',
+      });
+
+      const sLabel = sNode.label.replace(/[\r\n\t]+/g, ' ').trim();
+      const tLabel = tNode.label.replace(/[\r\n\t]+/g, ' ').trim();
+
+      return {
+        diagram: { ...diagram, nodes, edges },
+        handled: true,
+        explanation: `Inserted '${newNodeName}' between '${sLabel}' and '${tLabel}' with connecting arrows.`,
+      };
+    }
+  }
+
+  // 8. INTENT: ADD / INSERT (e.g. "Add Catalog to Display Error", "Insert Config below MFL", "Add Redis cache")
+  const addMatch = /(?:add|insert|create)\s+(?:a\s+|an\s+|node\s+)?['"]?(.+?)['"]?(?:\s+(below|above|after|before|to|in\s+front\s+of|next\s+to|under|right\s+of|left\s+of)\s+['"]?(.+?)['"]?)?$/i.exec(instr);
   if (addMatch) {
-    const newNodeName = addMatch[1].trim();
+    const newNodeName = addMatch[1].trim().replace(/^['"]|['"]$/g, '');
     const position = addMatch[2]?.toLowerCase();
-    const targetAnchorName = addMatch[3]?.trim();
+    const rawAnchorName = addMatch[3]?.trim();
 
-    const anchorNode = targetAnchorName ? findNode(targetAnchorName) : nodes[nodes.length - 1];
+    // Clean anchor name (strip quotes)
+    const targetAnchorName = rawAnchorName ? rawAnchorName.replace(/^['"]|['"]$/g, '').trim() : undefined;
+
+    let anchorNode: DiagramNode | undefined;
+    if (targetAnchorName) {
+      anchorNode = findNode(targetAnchorName);
+      if (!anchorNode) {
+        // Explicit anchor was provided but could not be resolved locally;
+        // Do not create a dangling node; allow fallback to AI model or return guidance.
+        return {
+          diagram,
+          handled: false,
+          explanation: `Could not locate anchor node matching "${targetAnchorName}". Please check the component name.`,
+        };
+      }
+    } else {
+      anchorNode = nodes.length > 0 ? nodes[nodes.length - 1] : undefined;
+    }
+
     const newNodeId = `node_${Date.now()}`;
-
     let x = 400;
     let y = 300;
 
     if (anchorNode) {
-      if (position === 'below') {
+      if (position === 'below' || position === 'under') {
         x = anchorNode.x;
-        y = anchorNode.y + anchorNode.height + 50;
-      } else if (position === 'above') {
+        y = anchorNode.y + anchorNode.height + 60;
+      } else if (position === 'above' || position === 'top of') {
         x = anchorNode.x;
         y = Math.max(20, anchorNode.y - 110);
-      } else if (position === 'before' || position === 'in front of') {
+      } else if (position === 'before' || position === 'in front of' || position === 'left of') {
         x = Math.max(20, anchorNode.x - 220);
         y = anchorNode.y;
       } else {
-        // after / to / default
+        // 'after', 'to', 'next to', 'right of', or default
         x = anchorNode.x + anchorNode.width + 80;
         y = anchorNode.y;
       }
@@ -476,19 +635,28 @@ function applyLocalCopilotEdit(
     nodes.push(newNode);
 
     if (anchorNode) {
+      const isBefore = position === 'before' || position === 'in front of' || position === 'left of';
+      const sourceId = isBefore ? newNodeId : anchorNode.id;
+      const targetId = isBefore ? anchorNode.id : newNodeId;
+
       edges.push({
         id: `edge_${Date.now()}`,
-        source: anchorNode.id,
-        target: newNodeId,
-        label: 'standard communication',
+        source: sourceId,
+        target: targetId,
+        label: '',
         style: 'orthogonal',
       });
     }
 
+    const cleanAnchorLabel = anchorNode ? anchorNode.label.replace(/[\r\n\t]+/g, ' ').trim() : '';
+    const explanationMsg = anchorNode
+      ? `Added '${newNodeName}' and connected it with an arrow to '${cleanAnchorLabel}'.`
+      : `Added new component '${newNodeName}'.`;
+
     return {
       diagram: { ...diagram, nodes, edges },
       handled: true,
-      explanation: `Added new component '${newNodeName}' without altering existing nodes.`,
+      explanation: explanationMsg,
     };
   }
 
