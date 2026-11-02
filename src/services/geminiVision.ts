@@ -2,6 +2,7 @@ import { ExtractedDiagram } from '../types/diagram';
 import { getCachedDiagram, setCachedDiagram, computeImageHash } from './diagramCache';
 import { tryExtractEmbeddedDrawioXml } from './drawioImageExtractor';
 import { parseDrawioXmlToDiagram } from './diagramXmlParser';
+import { repairAndParseJson } from './jsonRepair';
 
 export interface VisionAnalysisResult {
   diagram: ExtractedDiagram;
@@ -15,19 +16,25 @@ const SYSTEM_PROMPT = `You are a Principal Software and Cloud Architecture Visio
 Your job is to visually inspect architecture diagrams, flowcharts, or system designs from the provided image and extract a high-fidelity graph representation in pure JSON.
 
 Follow these strict rules:
-1. Detect ALL component boxes, containers, cloud services, and actors. Extract their exact text labels.
-2. Accurately identify connecting arrows and lines (source node to target node) and extract any text label on the arrow (e.g. "HTTPS", "REST", "gRPC", "Pub/Sub", "Kafka", "Data Sync", "standard communication").
-3. Determine each shape archetype:
+1. Detect ALL component boxes, containers, cloud services, and actors. Extract their exact text labels without omitting any.
+2. COMPLETENESS MANDATE FOR COMPLEX WORKFLOWS & SERVICE ARRAYS:
+   - Carefully inspect every tier and column:
+     * Ingestion, Storage & CMS (e.g. DynamoDB Global, AD Registration, Master Library, DOTS, CMS, S3)
+     * Transcoding pipelines (e.g. ORCA, Bitmovin / MediaConvert, Packager, CDN)
+     * Backend service clusters (e.g. Playback Ingest, Policies, Playback Service, DAI, Geofencing, Concurrency, Resume Point, Trust, Device Service, Snowflake)
+     * DRM Key Protection Arrays (e.g. DRM Proxy, DAZN Widevine/Fairplay/Playready, Axinom Widevine/Fairplay/Playready)
+     * Frontend App & Player (e.g. Frontend, Player, Conviva, Google)
+   - Capture every single box in vertical arrays and parallel stacks. Never skip or compress components.
+3. Accurately identify connecting arrows and lines (source node to target node) and extract any text label on the arrow.
+4. Determine each shape archetype:
    - "actor" for human users, browsers, mobile clients
-   - "rounded" for SDKs, API Gateways, Reverse Proxies
+   - "rounded" for SDKs, API Gateways, Reverse Proxies, Service Arrays
    - "rectangle" for Microservices, APIs, Configs
    - "cloud" for external third parties, SaaS, external streams, CDNs
    - "cylinder" for databases, caches, SQL/NoSQL stores
    - "rhombus" for decision diamonds
-4. Accurately extract (x, y, width, height) coordinates so the spatial relationships and visual tiering (left-to-right columns) are preserved.
-5. Capture component colors:
-   - "fillColor" (hex code like #DAE8FC, #D5E8D4, #FFE6CC, #E1D5E7)
-   - "strokeColor" (hex code)
+5. Accurately extract (x, y, width, height) coordinates so the spatial relationships and visual tiering (left-to-right columns) are preserved.
+6. Capture component colors (fillColor, strokeColor in hex).
 
 Output strictly valid JSON matching this schema:
 {
@@ -140,7 +147,7 @@ export async function analyzeDiagramImage(
               generationConfig: {
                 temperature: 0.1,
                 responseMimeType: 'application/json',
-                maxOutputTokens: 8192,
+                maxOutputTokens: 16384,
               },
             }),
             signal: AbortSignal.timeout(60000), // Generous 60s timeout for large complex architectures
@@ -158,7 +165,7 @@ export async function analyzeDiagramImage(
         const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!rawText) continue;
 
-        const parsed: ExtractedDiagram = JSON.parse(rawText);
+        const parsed: ExtractedDiagram = repairAndParseJson<ExtractedDiagram>(rawText);
 
         // Normalize node shapes in case model returned non-standard variants
         if (parsed && Array.isArray(parsed.nodes)) {

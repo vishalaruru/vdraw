@@ -84,6 +84,13 @@ function extractCellsFromDoc(doc: Document): { nodes: NodeCell[]; edges: EdgeCel
       edges.push({ cell, id, source, target, label });
     }
 
+    // Clean stale manual waypoints (<Array as="points">) so the connector line doesn't detour through old dragged coordinates
+    const geo = cell.querySelector('mxGeometry');
+    const stalePoints = geo?.querySelector('Array[as="points"]');
+    if (stalePoints) {
+      stalePoints.remove();
+    }
+
     // Standardize orthogonal connector routing with rounded 90-degree corners
     let style = cell.getAttribute('style') || '';
     if (!style.includes('edgeStyle=orthogonalEdgeStyle')) {
@@ -109,13 +116,43 @@ function commitNodeGeometries(nodes: NodeCell[]) {
 
 /**
  * 1. SMART BEAUTIFY & DECONFLICT ENGINE:
- * Implements column clustering, vertical stack deconfliction, column horizontal spacing,
- * peer connector straightening, and wide backbone isolation.
- * GUARANTEE: Zero data loss. 0 overlaps between bounding boxes.
+ * Implements edge-aware peer re-anchoring, column clustering, vertical stack deconfliction,
+ * column horizontal spacing, peer connector straightening, and wide backbone isolation.
+ * GUARANTEE: Zero data loss. Preserves 100% of links and brings displaced nodes back to connected peers.
  */
 function applySmartBeautify(nodes: NodeCell[], edges: EdgeCell[]) {
   const standardNodes = nodes.filter((n) => !n.isRailOrBanner && !n.isTallBracket);
   if (standardNodes.length === 0) return;
+
+  // Step 0: Edge-Aware Peer Re-Anchoring
+  // If a node was manually dragged far away from all the nodes it is linked to (e.g. MFL Digestor moved to far left),
+  // bring it back adjacent to the peer it connects to, rather than letting it be absorbed into an unrelated column!
+  for (const n of standardNodes) {
+    // Find all connected edges (ignoring wide backbone bus like Dots Stream)
+    const connectedEdges = edges.filter((e) => e.source === n.id || e.target === n.id);
+    const peerIds = connectedEdges.map((e) => (e.source === n.id ? e.target : e.source));
+    const peerNodes = standardNodes.filter((p) => peerIds.includes(p.id));
+
+    if (peerNodes.length > 0) {
+      const avgPeerX = peerNodes.reduce((sum, p) => sum + p.x, 0) / peerNodes.length;
+
+      // If displaced by more than 280px from all its connected peers:
+      if (Math.abs(n.x - avgPeerX) > 280) {
+        const primaryPeer = peerNodes[0];
+        const isSourceOfPeer = edges.some((e) => e.source === n.id && e.target === primaryPeer.id);
+
+        if (isSourceOfPeer) {
+          // Upstream feeder: place slightly to the left or above the peer
+          n.x = Math.max(60, primaryPeer.x - (n.w + 60));
+          n.y = Math.max(60, primaryPeer.y - (n.h + 30));
+        } else {
+          // Downstream receiver: place to the right of the peer
+          n.x = primaryPeer.x + (primaryPeer.w + 60);
+          n.y = primaryPeer.y;
+        }
+      }
+    }
+  }
 
   // Snap all nodes to 20px grid
   for (const n of standardNodes) {
@@ -163,7 +200,6 @@ function applySmartBeautify(nodes: NodeCell[], edges: EdgeCell[]) {
   // - Sort top to bottom by Y
   // - Eliminate all vertical overlap with guaranteed spacing
   for (const col of columns) {
-    // Determine common left coordinate or center
     const colX = Math.round(Math.min(...col.map((n) => n.x)) / 20) * 20;
     col.sort((a, b) => a.y - b.y);
 

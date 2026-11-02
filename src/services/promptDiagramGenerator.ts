@@ -1,6 +1,7 @@
 import { ExtractedDiagram, ThemePreset } from '../types/diagram';
 import { synthesizeDrawioXml } from './diagramSynthesizer';
 import { normalizeAndEnhanceDiagram } from './diagramLayoutOptimizer';
+import { repairAndParseJson } from './jsonRepair';
 
 const PROMPT_ENGINE_INSTRUCTIONS = `You are a Principal Cloud Architecture and Diagram Engineer for draw.io (Vdraw).
 Your job is to convert natural language architectural descriptions, flowcharts, or system briefs into pristine, publication-grade enterprise architecture models in pure JSON.
@@ -114,7 +115,7 @@ export async function generateDiagramFromPrompt(
             generationConfig: {
               temperature: 0.1,
               responseMimeType: 'application/json',
-              maxOutputTokens: 8192,
+              maxOutputTokens: 16384,
             },
           }),
           signal: AbortSignal.timeout(60000),
@@ -130,17 +131,7 @@ export async function generateDiagramFromPrompt(
       const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!raw) continue;
 
-      let cleaned = raw.trim();
-      if (cleaned.startsWith('```')) {
-        cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
-      }
-      const firstBrace = cleaned.indexOf('{');
-      const lastBrace = cleaned.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1) {
-        cleaned = cleaned.slice(firstBrace, lastBrace + 1);
-      }
-
-      const parsed: ExtractedDiagram = JSON.parse(cleaned);
+      const parsed: ExtractedDiagram = repairAndParseJson<ExtractedDiagram>(raw);
 
       // Determine orientation preference from prompt
       const isLtr = !prompt.toLowerCase().includes('top-to-bottom');
