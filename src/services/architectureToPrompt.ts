@@ -120,26 +120,29 @@ export function extractEnhancedTopology(xml: string): EnhancedTopology {
  */
 export function categorizeTiers(nodes: EnhancedTopologyNode[]): ArchitectureTier[] {
   const tierCategories: { name: string; types: string[]; items: string[] }[] = [
-    { name: 'Client & Edge Ingress', types: ['client', 'perimeter'], items: [] },
-    { name: 'Gateway & Reverse Proxy', types: ['gateway', 'connection_pool', 'circuit_breaker'], items: [] },
-    { name: 'Application & Core Microservices', types: ['compute', 'auth'], items: [] },
-    { name: 'Async Messaging & Streaming', types: ['queue', 'dlq'], items: [] },
-    { name: 'Persistence, Caches & Datastores', types: ['database', 'cache', 'object_storage'], items: [] },
-    { name: 'Security, Vault & Observability', types: ['secret_vault', 'vpc_endpoint', 'telemetry'], items: [] },
+    { name: 'CLIENT TIER', types: ['client', 'perimeter'], items: [] },
+    { name: 'INTEGRATION TIER', types: ['gateway', 'connection_pool', 'circuit_breaker'], items: [] },
+    { name: 'ORCHESTRATION & DOMAIN SERVICES TIER', types: ['compute', 'auth'], items: [] },
+    { name: 'ASYNC MESSAGING & STREAMING TIER', types: ['queue', 'dlq'], items: [] },
+    { name: 'EXTERNAL PROVIDERS & DATA TIER', types: ['database', 'cache', 'object_storage'], items: [] },
+    { name: 'CONFIGURATION & INFRASTRUCTURE TIER', types: ['secret_vault', 'vpc_endpoint', 'telemetry'], items: [] },
   ];
 
   const unclassified: string[] = [];
 
   for (const node of nodes) {
-    let placed = false;
-    for (const cat of tierCategories) {
-      if (cat.types.includes(node.type)) {
-        cat.items.push(node.label);
-        placed = true;
-        break;
-      }
-    }
-    if (!placed) {
+    const l = node.label.toLowerCase();
+    if (l.includes('client') || l.includes('user') || l.includes('browser') || l.includes('ios') || l.includes('android')) {
+      tierCategories[0].items.push(node.label);
+    } else if (l.includes('sdk') || l.includes('matcher') || l.includes('gateway') || l.includes('waf') || l.includes('proxy')) {
+      tierCategories[1].items.push(node.label);
+    } else if (l.includes('provider') || l.includes('stream') || l.includes('radar') || l.includes('gdp') || l.includes('dots')) {
+      tierCategories[4].items.push(node.label);
+    } else if (l.includes('config') || l.includes('vault') || l.includes('kms') || l.includes('setting')) {
+      tierCategories[5].items.push(node.label);
+    } else if (l.includes('api') || l.includes('service') || l.includes('mapper') || l.includes('worker') || l.includes('mfl')) {
+      tierCategories[2].items.push(node.label);
+    } else {
       unclassified.push(node.label);
     }
   }
@@ -160,17 +163,14 @@ export function generateMermaidFromTopology(topology: EnhancedTopology): string 
   const dir = topology.orientation === 'left-to-right' ? 'LR' : 'TD';
   const lines: string[] = [`flowchart ${dir}`];
 
-  // Node declarations with clean sanitized IDs
   const idMap = new Map<string, string>();
   topology.nodes.forEach((n, idx) => {
     const safeId = `N${idx + 1}`;
     idMap.set(n.id, safeId);
-    // Escape quotes
     const safeLabel = n.label.replace(/"/g, "'");
     lines.push(`  ${safeId}["${safeLabel}"]`);
   });
 
-  // Edge declarations
   topology.edges.forEach((e) => {
     const sId = idMap.get(e.source) || e.source;
     const tId = idMap.get(e.target) || e.target;
@@ -193,84 +193,115 @@ export function synthesizeDeterministicPrompt(topology: EnhancedTopology): Archi
   const edgeCount = topology.edges.length;
   const tiers = categorizeTiers(topology.nodes);
 
-  // Derive system title from prominent nodes
   const nodeLabels = topology.nodes.map((n) => n.label);
-  const primaryService = nodeLabels.find((l) => /service|api|app|core|order|payment/i.test(l)) || nodeLabels[0] || 'System';
-  const title = `${primaryService} Distributed Architecture`;
-  const summary = `A ${nodeCount}-component cloud architecture featuring ${tiers.length} architectural tiers interconnected by ${edgeCount} explicit data flow channels.`;
+  const primaryService = nodeLabels.find((l) => /service|api|app|core|order|payment|mfl|media/i.test(l)) || nodeLabels[0] || 'System';
+  const title = `${primaryService} Architecture Flow`;
+  const summary = `High-fidelity technical architecture diagram featuring ${nodeCount} components across ${tiers.length} architectural tiers with ${edgeCount} explicit data flow connections.`;
 
-  // Build the AI Reconstruction Prompt (optimized for LLMs and Draw.io prompt generators)
+  // Build the High-Fidelity Prompt matching the precise user specification format:
   const promptLines: string[] = [
-    `Create a detailed cloud architecture diagram for: ${title}.`,
-    '',
-    '### System Components & Tiers:',
+    `Create a high-fidelity technical architecture diagram with a '${topology.orientation}' orientation.`,
+    'The diagram must visualize the following flow:',
   ];
 
-  tiers.forEach((t) => {
-    promptLines.push(`- **${t.name}**: ${t.components.join(', ')}`);
-  });
-
-  promptLines.push('', '### Step-by-Step Data Flow Hops:');
-  if (topology.edges.length > 0) {
-    topology.edges.forEach((e, idx) => {
-      const action = e.label ? ` via "${e.label}"` : '';
-      promptLines.push(`${idx + 1}. [${e.sourceLabel}] ➔ [${e.targetLabel}]${action}`);
-    });
-  } else {
-    promptLines.push('Connect components sequentially through an ingress gateway down to persistence services.');
+  let stepNum = 1;
+  // 1. Client Tier
+  const clientTier = tiers.find((t) => t.name.includes('CLIENT'));
+  if (clientTier) {
+    promptLines.push(`${stepNum++}. CLIENT TIER: Position ${clientTier.components.map((c) => `'${c}'`).join(' and ')} at the far left.`);
   }
 
+  // 2. Integration Tier
+  const intTier = tiers.find((t) => t.name.includes('INTEGRATION'));
+  if (intTier) {
+    // Find connections from clients to integration
+    const intEdges = topology.edges.filter((e) => intTier.components.includes(e.targetLabel));
+    if (intEdges.length > 0) {
+      const flowDesc = intEdges.map((e) => `Connect '${e.sourceLabel}' to '${e.targetLabel}'`).join('. ');
+      promptLines.push(`${stepNum++}. INTEGRATION TIER: ${flowDesc}.`);
+    } else {
+      promptLines.push(`${stepNum++}. INTEGRATION TIER: Include ${intTier.components.map((c) => `'${c}'`).join(', ')}.`);
+    }
+  }
+
+  // 3. Orchestration & Domain Services Tier
+  const domainTier = tiers.find((t) => t.name.includes('ORCHESTRATION') || t.name.includes('DOMAIN'));
+  if (domainTier) {
+    const domainEdges = topology.edges.filter((e) => domainTier.components.includes(e.sourceLabel) || domainTier.components.includes(e.targetLabel));
+    if (domainEdges.length > 0) {
+      const flowDesc = domainEdges.map((e) => `Connect '${e.sourceLabel}' to '${e.targetLabel}'`).slice(0, 4).join('. ');
+      promptLines.push(`${stepNum++}. DOMAIN SERVICES TIER: ${flowDesc}.`);
+    } else {
+      promptLines.push(`${stepNum++}. DOMAIN SERVICES TIER: Position ${domainTier.components.map((c) => `'${c}'`).join(', ')}.`);
+    }
+  }
+
+  // 4. External Providers & Data Tier
+  const extTier = tiers.find((t) => t.name.includes('EXTERNAL'));
+  if (extTier) {
+    const extEdges = topology.edges.filter((e) => extTier.components.includes(e.targetLabel));
+    if (extEdges.length > 0) {
+      const flowDesc = extEdges.map((e) => `Connect '${e.sourceLabel}' to '${e.targetLabel}'`).join('. ');
+      promptLines.push(`${stepNum++}. EXTERNAL PROVIDERS & DATA TIER: ${flowDesc}.`);
+    } else {
+      promptLines.push(`${stepNum++}. EXTERNAL PROVIDERS & DATA TIER: Include ${extTier.components.map((c) => `'${c}'`).join(', ')}.`);
+    }
+  }
+
+  // 5. Configuration
+  const cfgTier = tiers.find((t) => t.name.includes('CONFIGURATION'));
+  if (cfgTier) {
+    const cfgEdges = topology.edges.filter((e) => cfgTier.components.includes(e.sourceLabel) || cfgTier.components.includes(e.targetLabel));
+    if (cfgEdges.length > 0) {
+      const edge = cfgEdges[0];
+      const target = edge.sourceLabel === cfgTier.components[0] ? edge.targetLabel : edge.sourceLabel;
+      promptLines.push(`${stepNum++}. CONFIGURATION: Place '${cfgTier.components[0]}' as a dependency for '${target}'.`);
+    } else {
+      promptLines.push(`${stepNum++}. CONFIGURATION: Place '${cfgTier.components[0]}' adjacent to core services.`);
+    }
+  }
+
+  // Common label and icon instructions
   promptLines.push(
-    '',
-    '### Architecture Constraints & Layout:',
-    `- Flow Orientation: ${topology.orientation === 'left-to-right' ? 'Left-to-Right (Horizontal pipeline)' : 'Top-to-Bottom (Vertical multi-tier)'}`,
-    '- Connectors: Orthogonal directed lines with explicit labels on interaction hops',
-    '- Grouping: Clear visual separation between Edge/Ingress, Compute Services, and Datastore tiers'
+    "All connections must be labeled 'standard communication'.",
+    "Use distinct icons for Clients ('actor'), APIs ('rounded'/'rectangle'), and External Providers ('cloud')."
   );
 
   const reconstructionPrompt = promptLines.join('\n');
 
-  // Build the System Spec Markdown (RFC Engineering Document)
+  // Build the System Spec Markdown
   const specLines: string[] = [
     `# Technical Architecture Specification: ${title}`,
     '',
-    `**Status:** Active Topology Baseline  `,
-    `**Generated:** ${new Date().toISOString().split('T')[0]}  `,
+    `**Status:** Verified Architecture Baseline  `,
+    `**Orientation:** ${topology.orientation.toUpperCase()}  `,
     `**Components:** ${nodeCount} | **Data Flow Hops:** ${edgeCount} | **Tiers:** ${tiers.length}  `,
     '',
     '## 1. System Overview',
     summary,
     '',
-    '## 2. Component Inventory & Responsibility Tiers',
+    '## 2. Component Inventory & Tiers',
   ];
 
   tiers.forEach((tier) => {
     specLines.push(`### ${tier.name}`);
     tier.components.forEach((c) => {
-      specLines.push(`- **\`${c}\`**: Component within the ${tier.name.toLowerCase()} domain.`);
+      specLines.push(`- **\`${c}\`**: Component within ${tier.name}.`);
     });
     specLines.push('');
   });
 
-  specLines.push('## 3. Interaction & Communication Matrix');
+  specLines.push('## 3. Communication Matrix');
   specLines.push('| Step | Source Component | Target Component | Protocol / Action |');
   specLines.push('| :--- | :--------------- | :--------------- | :---------------- |');
 
   if (topology.edges.length > 0) {
     topology.edges.forEach((e, idx) => {
-      specLines.push(`| ${idx + 1} | \`${e.sourceLabel}\` | \`${e.targetLabel}\` | ${e.label ? `\`${e.label}\`` : 'Direct Link / RPC'} |`);
+      specLines.push(`| ${idx + 1} | \`${e.sourceLabel}\` | \`${e.targetLabel}\` | ${e.label ? `\`${e.label}\`` : 'standard communication'} |`);
     });
   } else {
     specLines.push('| 1 | (Unconnected nodes) | - | - |');
   }
-
-  specLines.push(
-    '',
-    '## 4. Visual Layout Guidance for Diagram Generation',
-    `- Layout Orientation: ${topology.orientation}`,
-    `- Edge routing: Orthogonal paths with arrowheads at target endpoints`,
-    `- High availability: Ensure critical datastores and queue components feature failover pathways`
-  );
 
   const systemSpecMarkdown = specLines.join('\n');
   const mermaidSyntax = generateMermaidFromTopology(topology);
@@ -290,8 +321,7 @@ export function synthesizeDeterministicPrompt(topology: EnhancedTopology): Archi
 
 /**
  * AI-Powered Reverse Prompt Engineering:
- * Sends the topology graph to Gemini to produce an articulate, engineering-grade prompt
- * that can be fed back into any LLM or the studio's diagram generator.
+ * Analyzes the canvas topology graph and generates a natural language architecture prompt.
  */
 export async function generateReversePromptFromDiagram(
   xml: string,
@@ -299,7 +329,6 @@ export async function generateReversePromptFromDiagram(
 ): Promise<ArchitecturePromptResult> {
   const topology = extractEnhancedTopology(xml);
 
-  // If the diagram has 0 nodes, return empty baseline
   if (topology.nodes.length === 0) {
     return {
       title: 'Empty Architecture Canvas',
@@ -314,10 +343,8 @@ export async function generateReversePromptFromDiagram(
     };
   }
 
-  // Pre-generate deterministic baseline as instant fallback
   const deterministicResult = synthesizeDeterministicPrompt(topology);
 
-  // API Key resolution
   const envKey = (import.meta as unknown as { env?: { VITE_GEMINI_API_KEY?: string } })?.env?.VITE_GEMINI_API_KEY || '';
   const storedKey = (typeof localStorage !== 'undefined' ? localStorage.getItem('GEMINI_API_KEY') : '') || '';
   const cleanStored = storedKey.includes('AIzaSyBCdBG4Cu') ? '' : storedKey;
@@ -325,7 +352,6 @@ export async function generateReversePromptFromDiagram(
   const keyToUse = cleanPassed || envKey || cleanStored;
 
   if (!keyToUse.trim()) {
-    // Return deterministic offline result
     return deterministicResult;
   }
 
@@ -346,21 +372,31 @@ export async function generateReversePromptFromDiagram(
     })),
   });
 
-  const promptInstructions = `You are a Principal Cloud Enterprise Architect and AI Prompt Engineer.
+  const promptInstructions = `You are a Principal Cloud Architect and AI Prompt Engineer.
 Analyze the following extracted architecture topology graph (nodes and directed edges):
 ${topologyContext}
 
 Your mission:
 Generate a pristine, highly-structured natural language AI PROMPT such that when any engineer or AI diagram generator reads it, they can re-generate this exact architecture flow with 100% fidelity.
 
+Follow this exact prompt structure:
+"Create a high-fidelity technical architecture diagram with a '${topology.orientation}' orientation. The diagram must visualize the following flow:
+1. CLIENT TIER: Position [Clients] at the far left.
+2. INTEGRATION TIER: Connect [Clients] to [SDK/Gateway].
+3. ORCHESTRATION TIER: Connect [SDK/Gateway] to [APIs].
+4. DOMAIN SERVICES TIER: Connect [APIs] to [Services].
+5. EXTERNAL PROVIDERS & DATA TIER: Connect [Services] to [External Providers and Data Streams].
+6. CONFIGURATION: Place [Config] as a dependency for [Target Service].
+All connections must be labeled 'standard communication'. Use distinct icons for Clients ('actor'), APIs ('rounded'/'rectangle'), and External Providers ('cloud')."
+
 Output a valid JSON object matching this exact schema:
 {
-  "title": "A crisp, authoritative system name (e.g. 'High-Throughput E-Commerce Order & Inventory Pipeline')",
-  "summary": "2-3 sentences explaining the architectural intent, style (microservices, event-driven, CQRS, etc.), and functional purpose.",
-  "reconstructionPrompt": "A comprehensive, beautifully formatted prompt for an AI diagram generator. It must include: System Goal, Architectural Tiers with exact component names, Explicit Step-by-Step Data Flow Hops with protocols ('[Source] -> [Target] via [Protocol: Action]'), Non-functional requirements (security, caching, queues), and Layout orientation instructions.",
+  "title": "A crisp, authoritative system name (e.g. 'Sports Media Orchestration & Provider Integration Pipeline')",
+  "summary": "2-3 sentences explaining the architectural intent, flow direction, and functional purpose.",
+  "reconstructionPrompt": "The pristine prompt formatted exactly as shown above.",
   "systemSpecMarkdown": "An engineering RFC specification in GitHub-flavored markdown with: 1. Overview, 2. Tier Breakdown, 3. Step-by-Step Data Flow Table, 4. Resilience & Security Analysis.",
   "tiers": [
-    { "name": "Tier Name (e.g. Ingress & Edge)", "components": ["Component1", "Component2"] }
+    { "name": "CLIENT TIER", "components": ["iOS / Android Client", "Web Client"] }
   ]
 }
 
@@ -383,16 +419,14 @@ DO NOT output markdown backticks around the JSON. Output only raw JSON.`;
               },
             ],
             generationConfig: {
-              temperature: 0.2,
+              temperature: 0.1,
               responseMimeType: 'application/json',
             },
           }),
         }
       );
 
-      if (!response.ok) {
-        continue;
-      }
+      if (!response.ok) continue;
 
       const data = await response.json();
       const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -417,6 +451,5 @@ DO NOT output markdown backticks around the JSON. Output only raw JSON.`;
     }
   }
 
-  // Graceful fallback to deterministic synthesizer
   return deterministicResult;
 }
