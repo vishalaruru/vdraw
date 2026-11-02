@@ -3,6 +3,7 @@ import { synthesizeDrawioXml } from './diagramSynthesizer';
 import { parseDrawioXmlToDiagram } from './diagramXmlParser';
 import { normalizeAndEnhanceDiagram } from './diagramLayoutOptimizer';
 import { beautifyDiagramXml } from './diagramBeautifier';
+import { repairAndParseJson } from './jsonRepair';
 
 const COPILOT_SYSTEM_INSTRUCTIONS = `You are a Principal Architecture Copilot for draw.io (Vdraw).
 You receive the CURRENT DIAGRAM state as a structured list of components (nodes) and connections (edges), plus a natural language user instruction.
@@ -163,7 +164,7 @@ export async function modifyDiagramWithCopilot(
             generationConfig: {
               temperature: 0.1,
               responseMimeType: 'application/json',
-              maxOutputTokens: 8192,
+              maxOutputTokens: 16384,
             },
           }),
           signal: AbortSignal.timeout(60000),
@@ -179,8 +180,9 @@ export async function modifyDiagramWithCopilot(
       const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!raw) continue;
 
-      const cleanedJson = extractCleanJson(raw);
-      const parsed: ExtractedDiagram & { explanation?: string } = JSON.parse(cleanedJson);
+      const parsed: ExtractedDiagram & { explanation?: string } = repairAndParseJson<
+        ExtractedDiagram & { explanation?: string }
+      >(raw);
 
       // Verify no existing nodes were accidentally dropped when adding
       const lowerInstr = userInstruction.toLowerCase();
@@ -223,21 +225,6 @@ export async function modifyDiagramWithCopilot(
   };
 }
 
-/**
- * Strips markdown code fences (```json ... ```) and extracts valid JSON block.
- */
-function extractCleanJson(raw: string): string {
-  let cleaned = raw.trim();
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
-  }
-  const firstBrace = cleaned.indexOf('{');
-  const lastBrace = cleaned.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    return cleaned.slice(firstBrace, lastBrace + 1);
-  }
-  return cleaned;
-}
 
 interface LocalEditResult {
   diagram: ExtractedDiagram;

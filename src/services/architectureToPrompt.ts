@@ -1,4 +1,5 @@
 import { extractTopologyFromXml } from './architectureAuditor';
+import { repairAndParseJson } from './jsonRepair';
 
 export interface ArchitectureTier {
   name: string;
@@ -530,7 +531,7 @@ DO NOT output markdown backticks around the JSON. Output only raw JSON.`;
             generationConfig: {
               temperature: 0.1,
               responseMimeType: 'application/json',
-              maxOutputTokens: 8192,
+              maxOutputTokens: 16384,
             },
             signal: AbortSignal.timeout(60000),
           }),
@@ -543,17 +544,7 @@ DO NOT output markdown backticks around the JSON. Output only raw JSON.`;
       const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!content) continue;
 
-      let cleaned = content.trim();
-      if (cleaned.startsWith('```')) {
-        cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
-      }
-      const firstBrace = cleaned.indexOf('{');
-      const lastBrace = cleaned.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1) {
-        cleaned = cleaned.slice(firstBrace, lastBrace + 1);
-      }
-
-      const parsed = JSON.parse(cleaned);
+      const parsed: any = repairAndParseJson(content);
       if (parsed.reconstructionPrompt) {
         // Completeness Verification: Ensure AI model didn't summarize away components
         let mentionedCount = 0;
