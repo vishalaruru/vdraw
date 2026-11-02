@@ -24,6 +24,18 @@ interface IconDefinition {
 }
 
 const ICON_DEFINITIONS: IconDefinition[] = [
+  // --- Web & Client Endpoints ---
+  {
+    name: 'Web Client / Browser',
+    provider: 'AWS',
+    badgeColor: '#2563EB',
+    category: 'Client & Frontend',
+    pattern: /\bweb\b|\bwebsite\b|\bweb\s*app\b|\bweb\s*client\b|\bbrowser\b|\bweb\s*application\b/i,
+    style: 'shape=mxgraph.aws4.client;fillColor=#2563EB;strokeColor=none;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;',
+    width: 60,
+    height: 60,
+  },
+
   // --- AWS Infrastructure ---
   {
     name: 'AWS DynamoDB',
@@ -212,10 +224,10 @@ const ICON_DEFINITIONS: IconDefinition[] = [
     provider: 'Database',
     badgeColor: '#336791',
     category: 'SQL Database',
-    pattern: /\bpostgres\b|\bpostgresql\b|\bpsql\b|\busers?\s*db\s*\(postgresql\)/i,
-    style: 'shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#336791;strokeColor=#1A3752;fontColor=#ffffff;whiteSpace=wrap;html=1;fontStyle=1;',
-    width: 120,
-    height: 70,
+    pattern: /\bpostgres(?:ql|\s*sql)?\b|\bpsql\b|\busers?\s*db/i,
+    style: 'shape=mxgraph.aws4.rds;fillColor=#336791;strokeColor=none;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;',
+    width: 60,
+    height: 60,
   },
   {
     name: 'Redis In-Memory Cache',
@@ -521,8 +533,9 @@ export function detectIconMatches(xml: string): IconMatchItem[] {
     // Check against icon catalog
     for (const def of ICON_DEFINITIONS) {
       if (def.pattern.test(cleanLabel)) {
-        // Skip if already has this exact shape
-        if (currentStyle.includes(def.style.slice(0, 30))) {
+        // Skip if already has this exact stencil icon shape
+        const shapePart = def.style.split(';')[0];
+        if (currentStyle.includes(shapePart)) {
           break;
         }
 
@@ -619,3 +632,4 @@ export function beautifyIconsInXml(
 
   return { xml: updatedXml, updatedCount, matches };
 }
+

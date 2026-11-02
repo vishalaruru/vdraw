@@ -277,3 +277,4 @@ export const IconBeautifierModal: React.FC<IconBeautifierModalProps> = ({
     </div>
   );
 };
+
