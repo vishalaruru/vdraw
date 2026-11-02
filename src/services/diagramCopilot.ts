@@ -479,6 +479,34 @@ function applyLocalCopilotEdit(
     }
   }
 
+  // 6.5. INTENT: REVERSE / FLIP ARROW (e.g. "Reverse arrow between Web and User Enters Credentials", "Flip arrow between A and B")
+  const reverseMatch = /(?:reverse|flip|invert)\s+(?:arrow|edge|connection|direction)?\s*(?:between|from)?\s*['"]?(.+?)['"]?\s+(?:and|to)\s+['"]?(.+?)['"]?$/i.exec(instr);
+  if (reverseMatch) {
+    const name1 = reverseMatch[1].trim();
+    const name2 = reverseMatch[2].trim();
+    const node1 = findNode(name1);
+    const node2 = findNode(name2);
+    if (node1 && node2) {
+      const edge = edges.find(
+        (e) => (e.source === node1.id && e.target === node2.id) || (e.source === node2.id && e.target === node1.id)
+      );
+      if (edge) {
+        const oldSource = edge.source;
+        edge.source = edge.target;
+        edge.target = oldSource;
+        const newSourceNode = edge.source === node1.id ? node1 : node2;
+        const newTargetNode = edge.target === node1.id ? node1 : node2;
+        const sLabel = newSourceNode.label.replace(/[\r\n\t]+/g, ' ').trim();
+        const tLabel = newTargetNode.label.replace(/[\r\n\t]+/g, ' ').trim();
+        return {
+          diagram: { ...diagram, nodes, edges },
+          handled: true,
+          explanation: `Reversed arrow: now points from '${sLabel}' ➔ '${tLabel}'.`,
+        };
+      }
+    }
+  }
+
   // 7. INTENT: CONNECT (e.g. "Connect DCMS to Dots Stream", "Wire A to B via gRPC")
   const connectMatch = /(?:connect|wire|link)\s+(?:node\s+|the\s+node\s+)?['"]?(.+?)['"]?\s+to\s+['"]?(.+?)['"]?(?:\s+(?:via|with\s+label)\s+['"]?(.+?)['"]?)?$/i.exec(instr);
   if (connectMatch) {
@@ -613,8 +641,18 @@ function applyLocalCopilotEdit(
       } else if (position === 'before' || position === 'in front of' || position === 'left of') {
         x = Math.max(20, anchorNode.x - 220);
         y = anchorNode.y;
+      } else if (position === 'to') {
+        // "Add Web to User Enters Credentials" means Web feeds INTO User Enters Credentials
+        // Position Web to the left of the anchor node if space permits, otherwise above it
+        if (anchorNode.x >= 200) {
+          x = anchorNode.x - 220;
+          y = anchorNode.y;
+        } else {
+          x = anchorNode.x;
+          y = Math.max(20, anchorNode.y - 110);
+        }
       } else {
-        // 'after', 'to', 'next to', 'right of', or default
+        // 'after', 'next to', 'right of', or default
         x = anchorNode.x + anchorNode.width + 80;
         y = anchorNode.y;
       }
@@ -635,9 +673,18 @@ function applyLocalCopilotEdit(
     nodes.push(newNode);
 
     if (anchorNode) {
-      const isBefore = position === 'before' || position === 'in front of' || position === 'left of';
-      const sourceId = isBefore ? newNodeId : anchorNode.id;
-      const targetId = isBefore ? anchorNode.id : newNodeId;
+      // In English, "Add [New] to [Anchor]", "Add [New] before [Anchor]", "Add [New] above [Anchor]"
+      // all mean the new node is the precursor/caller/sender feeding INTO Anchor.
+      const isPointingToAnchor =
+        position === 'to' ||
+        position === 'before' ||
+        position === 'in front of' ||
+        position === 'left of' ||
+        position === 'above' ||
+        position === 'top of';
+
+      const sourceId = isPointingToAnchor ? newNodeId : anchorNode.id;
+      const targetId = isPointingToAnchor ? anchorNode.id : newNodeId;
 
       edges.push({
         id: `edge_${Date.now()}`,
@@ -646,17 +693,23 @@ function applyLocalCopilotEdit(
         label: '',
         style: 'orthogonal',
       });
-    }
 
-    const cleanAnchorLabel = anchorNode ? anchorNode.label.replace(/[\r\n\t]+/g, ' ').trim() : '';
-    const explanationMsg = anchorNode
-      ? `Added '${newNodeName}' and connected it with an arrow to '${cleanAnchorLabel}'.`
-      : `Added new component '${newNodeName}'.`;
+      const cleanAnchorLabel = anchorNode.label.replace(/[\r\n\t]+/g, ' ').trim();
+      const explanationMsg = isPointingToAnchor
+        ? `Added '${newNodeName}' and connected it ➔ '${cleanAnchorLabel}'.`
+        : `Added '${newNodeName}' connected from '${cleanAnchorLabel}' ➔ '${newNodeName}'.`;
+
+      return {
+        diagram: { ...diagram, nodes, edges },
+        handled: true,
+        explanation: explanationMsg,
+      };
+    }
 
     return {
       diagram: { ...diagram, nodes, edges },
       handled: true,
-      explanation: explanationMsg,
+      explanation: `Added new component '${newNodeName}'.`,
     };
   }
 
