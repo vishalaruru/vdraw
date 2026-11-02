@@ -26,6 +26,7 @@ Welcome to the comprehensive technical documentation for **`vish.al` Intelligent
    - [4.5 Command Palette (⌘K)](#45-command-palette-k)
    - [4.6 Database SQL / Prisma to ERD](#46-database-sql--prisma-to-erd)
    - [4.7 Reverse IaC Engine](#47-reverse-iac-engine)
+   - [4.8 Architecture to AI Prompt Engine (Reverse Engineering)](#48-architecture-to-ai-prompt-engine-reverse-engineering)
 5. [Architecture & Communication Flow](#5-architecture--communication-flow)
 
 ---
@@ -80,6 +81,7 @@ The original Draw.io menus (`File`, `Edit`, `View`, `Arrange`, `Extras`, `Help`)
 - **Upload Architecture Image / Sketch:** Employs multimodal Gemini Vision to convert whiteboard sketches, architectural screenshots, or hand-drawn notes into editable Draw.io XML shapes.
 - **Conversational Draw (Copilot):** Natural language chat bar allowing users to request modifications (e.g. *"Add a Redis cache before Postgres"* or *"Wrap payment services in a private subnet"*).
 - **Prompt to Architecture:** Generates complete architectures from simple natural language briefs with automatic tiering, cloud icons, and connections.
+- **Architecture → AI Prompt (Reverse Prompt):** Reverse-engineers any diagram on canvas into an unambiguous, highly-structured natural language prompt, RFC engineering specification, and Mermaid graph that can be fed into any AI model to reproduce the exact same architecture flow.
 
 ---
 
@@ -209,6 +211,15 @@ Maps architectural assets to the Microsoft STRIDE framework:
 
 - Ingests Terraform `.tf` HCL, Docker Compose `docker-compose.yml`, and Kubernetes manifest YAML.
 - Reconstructs visual cloud topology nodes with appropriate vendor logos, container tiers, and dependency arrows.
+
+---
+
+### 4.8 Architecture to AI Prompt Engine (Reverse Engineering)
+- **Zero-Ambiguity Reverse Prompting:** Inspects the active canvas diagram (nodes, spatial orientation, tiers, directed connector hops, labels) and generates a structured, reproducible natural language prompt.
+- **Reproducibility Guarantee:** Feeding this exact prompt into any LLM (or the built-in "Prompt to Architecture" generator) reproduces the exact same architecture design with high fidelity.
+- **RFC Technical Specification:** Automatically generates a comprehensive Markdown specification containing Component Inventory, Interaction Matrix Table, and non-functional requirements.
+- **Mermaid Export:** Generates clean, ready-to-use Mermaid.js flowchart code (`flowchart LR` or `flowchart TD`).
+- **1-Click "Test & Re-Synthesize":** Allows engineers to immediately verify the prompt's reproducibility by re-generating and rendering the architecture directly on canvas.
 
 ---
 

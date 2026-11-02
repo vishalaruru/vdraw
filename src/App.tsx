@@ -33,6 +33,7 @@ import {
 import { DrawioEditor, DrawioEditorHandle } from './components/DrawioEditor';
 import { ImageToDiagramModal } from './components/ImageToDiagramModal';
 import { PromptToDiagramModal } from './components/PromptToDiagramModal';
+import { ReversePromptModal } from './components/ReversePromptModal';
 import { ExportCodeModal } from './components/ExportCodeModal';
 import { VersionHistoryModal } from './components/VersionHistoryModal';
 import { WorkspaceTabs } from './components/WorkspaceTabs';
@@ -117,6 +118,7 @@ export const App: React.FC = () => {
   // Modals state
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false); // #1
+  const [isReversePromptOpen, setIsReversePromptOpen] = useState(false); // Reverse Prompt
   const [isExportCodeOpen, setIsExportCodeOpen] = useState(false); // #3
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false); // #4
 
@@ -690,6 +692,14 @@ export const App: React.FC = () => {
   // Command Palette Items (#2)
   const commandItems: CommandItem[] = useMemo(() => [
     {
+      id: 'cmd_reverse_prompt',
+      title: 'Architecture → AI Prompt (Reverse Prompt)',
+      subtitle: 'Extract reproducible AI prompt, RFC specification & Mermaid flow from canvas',
+      category: 'AI & Analysis',
+      icon: <Sparkles className="w-4 h-4 text-purple-600" />,
+      action: () => setIsReversePromptOpen(true),
+    },
+    {
       id: 'cmd_audit',
       title: 'Run Security & SOLID Audit',
       subtitle: 'Zero-Trust, SPOF, and Well-Architected Framework Linter',
@@ -1104,6 +1114,34 @@ export const App: React.FC = () => {
                     </div>
                     <div className="text-[11px] text-slate-500 truncate">
                       Evolve & refactor components via interactive dialogue
+                    </div>
+                  </div>
+                </button>
+
+                {/* 4. Architecture to AI Prompt (Reverse Prompt) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenSubMenu(null);
+                    setIsReversePromptOpen(true);
+                  }}
+                  className="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-purple-50/70 transition-colors group cursor-pointer border-t border-slate-100/80"
+                >
+                  <div className="relative w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-200 flex items-center justify-center shrink-0 overflow-hidden group-hover:scale-105 transition-transform">
+                    <Sparkles className="w-4 h-4 text-purple-600" />
+                    <div className="absolute inset-0 bg-purple-400/10 animate-ping rounded-lg pointer-events-none" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[12px] font-bold text-slate-800 group-hover:text-purple-700">
+                        Architecture → AI Prompt
+                      </span>
+                      <span className="px-1.5 py-0.2 text-[9px] font-semibold bg-purple-100 text-purple-700 rounded">
+                        Reverse AI
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 truncate">
+                      Extract reproducible prompt & RFC spec from canvas
                     </div>
                   </div>
                 </button>
@@ -1746,6 +1784,14 @@ export const App: React.FC = () => {
         isOpen={isPromptModalOpen}
         onClose={() => setIsPromptModalOpen(false)}
         onInsertDiagram={handleInsertDiagram}
+      />
+
+      {/* Feature: Architecture to AI Prompt (Reverse Prompt) */}
+      <ReversePromptModal
+        isOpen={isReversePromptOpen}
+        onClose={() => setIsReversePromptOpen(false)}
+        xml={currentXml}
+        onInsertDiagram={(xml, mode) => handleInsertDiagram(xml, mode)}
       />
 
       {/* Feature #3: Export Code Modal */}
