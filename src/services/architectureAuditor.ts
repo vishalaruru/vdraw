@@ -39,6 +39,11 @@ export interface ParsedTopologyNode {
   id: string;
   label: string;
   type: string;
+  isContainer?: boolean;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }
 
 export interface ParsedTopologyEdge {
@@ -57,11 +62,22 @@ import { parseDrawioXmlToDiagram } from './diagramXmlParser';
 export function extractTopologyFromXml(xml: string): ParsedTopology {
   const parsed = parseDrawioXmlToDiagram(xml);
   return {
-    nodes: parsed.nodes.map((n) => ({
-      id: n.id,
-      label: n.label,
-      type: classifyNodeType(n.label),
-    })),
+    nodes: parsed.nodes.map((n) => {
+      const isContainer =
+        n.shape === 'container' ||
+        (n.width >= 350 && n.height >= 180) ||
+        /central|backend|routing|app|vpc|zone|container|cluster/i.test(n.label);
+      return {
+        id: n.id,
+        label: n.label,
+        type: isContainer ? 'container' : classifyNodeType(n.label),
+        isContainer,
+        x: n.x,
+        y: n.y,
+        width: n.width,
+        height: n.height,
+      };
+    }),
     edges: parsed.edges.map((e) => ({
       source: e.source,
       target: e.target,

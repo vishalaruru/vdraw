@@ -13,7 +13,14 @@ export interface BlastRadiusResult {
 
 export function simulateBlastRadius(xml: string, targetNodeId: string): BlastRadiusResult {
   const topology = extractTopologyFromXml(xml);
-  const target = topology.nodes.find((n) => n.id === targetNodeId) || topology.nodes[0];
+  const candidates = topology.nodes.filter(
+    (n) => !n.isContainer && n.type !== 'container' && n.label.trim().length > 0
+  );
+  const target =
+    candidates.find((n) => n.id === targetNodeId) ||
+    topology.nodes.find((n) => n.id === targetNodeId) ||
+    candidates[0] ||
+    topology.nodes[0];
 
   if (!target) {
     throw new Error('No target component found in diagram.');

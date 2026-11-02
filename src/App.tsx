@@ -567,17 +567,29 @@ export const App: React.FC = () => {
   };
 
   // Feature #1: Chaos Engineering Blast Radius
-  const topologyNodes = useMemo(() => extractTopologyFromXml(currentXml).nodes, [currentXml]);
+  const topologyNodes = useMemo(() => {
+    const topo = extractTopologyFromXml(currentXml);
+    return topo.nodes.filter(
+      (n) => !n.isContainer && n.type !== 'container' && n.label.trim().length > 0
+    );
+  }, [currentXml]);
 
   const handleStartChaos = async (targetId?: string) => {
     const xmlToProcess = (await editorRef.current?.getCurrentXml()) || currentXml;
-    const nodes = extractTopologyFromXml(xmlToProcess).nodes;
-    if (nodes.length === 0) {
+    const allNodes = extractTopologyFromXml(xmlToProcess).nodes;
+    const candidateNodes = allNodes.filter(
+      (n) => !n.isContainer && n.type !== 'container' && n.label.trim().length > 0
+    );
+    if (candidateNodes.length === 0) {
       showToast('Canvas has no components to test');
       return;
     }
 
-    const target = targetId || nodes.find((n) => n.type === 'database')?.id || nodes[0].id;
+    const target =
+      targetId ||
+      candidateNodes.find((n) => n.type === 'database')?.id ||
+      candidateNodes.find((n) => n.type === 'service')?.id ||
+      candidateNodes[0].id;
     setChaosTargetNodeId(target);
 
     try {
